@@ -1,0 +1,160 @@
+@import "tailwindcss";
+
+:root {
+  --background: oklch(0.985 0.003 285);
+  --foreground: oklch(0.16 0.01 285.75);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.16 0.01 285.75);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.16 0.01 285.75);
+  /* Brand navy (CB Web Artisan) — used for primary actions & active states */
+  --primary: oklch(0.315 0.12 268);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.958 0.004 286.375);
+  --secondary-foreground: oklch(0.24 0.012 285.885);
+  --muted: oklch(0.958 0.004 286.375);
+  --muted-foreground: oklch(0.52 0.018 285.938);
+  --accent: oklch(0.953 0.008 268);
+  --accent-foreground: oklch(0.24 0.012 285.885);
+  --destructive: oklch(0.56 0.22 25);
+  --destructive-foreground: oklch(0.985 0 0);
+  --border: oklch(0.88 0.006 286.32);
+  --input: oklch(0.875 0.006 286.32);
+  --ring: oklch(0.36 0.12 268);
+  --radius: 0.5rem;
+  /* Brand palette */
+  --brand-navy: oklch(0.315 0.12 268);
+  --brand-red: oklch(0.56 0.21 25);
+  --surface: oklch(0.995 0.001 285);
+  --surface-muted: oklch(0.966 0.004 286);
+  --crm-shadow-control: 0 1px 1px rgb(24 24 27 / 0.04), 0 1px 2px rgb(24 24 27 / 0.06);
+  --crm-shadow-surface: 0 1px 2px rgb(24 24 27 / 0.04), 0 18px 44px -34px rgb(24 24 27 / 0.35);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-brand-navy: var(--brand-navy);
+  --color-brand-red: var(--brand-red);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --shadow-control: var(--crm-shadow-control);
+  --shadow-surface: var(--crm-shadow-surface);
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
+  --radius-xl: calc(var(--radius) + 4px);
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+}
+
+@keyframes accordion-down {
+  from { height: 0; }
+  to { height: var(--radix-accordion-content-height); }
+}
+
+@keyframes accordion-up {
+  from { height: var(--radix-accordion-content-height); }
+  to { height: 0; }
+}
+
+* {
+  border-color: var(--border);
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  background:
+    linear-gradient(180deg, oklch(0.995 0.001 285) 0%, var(--background) 42%, oklch(0.972 0.004 286) 100%);
+  color: var(--foreground);
+}
+
+/* Selection uses a soft brand tint */
+::selection {
+  background: color-mix(in oklch, var(--brand-navy) 18%, transparent);
+}
+
+/* ── Refined scrollbars (premium, unobtrusive) ── */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-zinc-300, #d4d4d8) transparent;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background-color: color-mix(in oklch, var(--foreground) 18%, transparent);
+  border-radius: 9999px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background-color: color-mix(in oklch, var(--foreground) 32%, transparent);
+  background-clip: content-box;
+}
+
+/* ── TipTap rich text editor ── */
+.ProseMirror { outline: none; }
+.ProseMirror > * + * { margin-top: 0.4em; }
+
+/* Reset @tiptap/extension-table layout styles — the editor has no table toolbar so
+   the only table rendered is the email signature. The extension's TableView strips
+   role="presentation", generates a colgroup with cellMinWidth=25px, and sets
+   table-layout:fixed + width:100%, all of which break the 1px separator layout.
+   These overrides are safe because inline styles on individual cells always win. */
+.ProseMirror table {
+  table-layout: auto;
+  width: auto;
+  overflow: visible;
+}
+.ProseMirror table td,
+.ProseMirror table th {
+  min-width: 0;
+  border: none;
+  padding: 0;
+  position: static;
+}
+.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: var(--muted-foreground);
+  pointer-events: none;
+  float: left;
+  height: 0;
+}
+.ProseMirror ul { list-style: disc; padding-left: 1.4em; }
+.ProseMirror ol { list-style: decimal; padding-left: 1.4em; }
+.ProseMirror li { margin: 0.15em 0; }
+.ProseMirror strong { font-weight: 600; }
+.ProseMirror em { font-style: italic; }
+.ProseMirror h1 { font-size: 1.4em; font-weight: 700; line-height: 1.3; }
+.ProseMirror h2 { font-size: 1.2em; font-weight: 600; line-height: 1.3; }
+.ProseMirror h3 { font-size: 1.05em; font-weight: 600; line-height: 1.3; }
+.ProseMirror a { color: #2563eb; text-decoration: underline; }
