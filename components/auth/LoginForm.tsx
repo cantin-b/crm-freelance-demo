@@ -1,13 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { Check, Copy, Eye, EyeOff, Info, KeyRound, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useT } from "@/components/providers/UiLanguageProvider";
+
+const DEMO_ACCOUNT = {
+  id: "user-one",
+  email: "userone@mail.com",
+  password: "userone",
+};
 
 export function LoginForm() {
   const router = useRouter();
@@ -19,6 +25,21 @@ export function LoginForm() {
   const [error, setError] = useState<string | null>(null);
   const [forgotMessage, setForgotMessage] = useState<string | null>(null);
   const [forgotLoading, setForgotLoading] = useState(false);
+  const [demoBannerVisible, setDemoBannerVisible] = useState(true);
+  const [credentialsOpen, setCredentialsOpen] = useState(false);
+  const [copyFeedback, setCopyFeedback] = useState<{ key: string; status: "copied" | "manual" | "" }>({
+    key: "",
+    status: "",
+  });
+
+  useEffect(() => {
+    if (!credentialsOpen) return;
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setCredentialsOpen(false);
+    };
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, [credentialsOpen]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -65,6 +86,28 @@ export function LoginForm() {
       setError(t.login_error);
     } finally {
       setForgotLoading(false);
+    }
+  }
+
+  function handleUseAccount() {
+    setEmail(DEMO_ACCOUNT.email);
+    setPassword(DEMO_ACCOUNT.password);
+    setError(null);
+    setForgotMessage(null);
+    setCredentialsOpen(false);
+  }
+
+  async function handleCopy(value: string, key: string) {
+    const showFeedback = (status: "copied" | "manual") => {
+      setCopyFeedback({ key, status });
+      setTimeout(() => setCopyFeedback({ key: "", status: "" }), 1800);
+    };
+
+    try {
+      await navigator.clipboard.writeText(value);
+      showFeedback("copied");
+    } catch {
+      showFeedback("manual");
     }
   }
 
@@ -140,6 +183,165 @@ export function LoginForm() {
           </button>
         </div>
       </div>
+
+      {demoBannerVisible && (
+        <div className="fixed inset-x-3 bottom-3 z-30 mx-auto max-w-xl sm:bottom-5">
+          <div className="flex items-center gap-3 rounded-2xl border border-zinc-200/80 bg-white/95 p-3 shadow-[0_18px_48px_rgba(24,24,27,0.16)] ring-1 ring-white/80 backdrop-blur-xl">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-navy text-white shadow-[0_8px_18px_rgba(24,24,27,0.2)]">
+              <Info className="h-4 w-4" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-zinc-950">{t.demo_access_available}</p>
+              <p className="truncate text-xs text-zinc-500">{t.demo_access_description}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setCredentialsOpen(true)}
+              className="shrink-0 rounded-full bg-zinc-950 px-3 py-2 text-xs font-semibold text-white transition hover:bg-brand-navy focus:outline-none focus:ring-2 focus:ring-brand-navy/25"
+            >
+              {t.demo_view_credentials}
+            </button>
+            <button
+              type="button"
+              onClick={() => setDemoBannerVisible(false)}
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-700 focus:outline-none focus:ring-2 focus:ring-brand-navy/20"
+              aria-label={t.demo_close_banner}
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {credentialsOpen && (
+        <div
+          className="fixed inset-0 z-40 flex items-center justify-center bg-zinc-950/35 px-4 backdrop-blur-sm"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setCredentialsOpen(false);
+          }}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="demo-credentials-title"
+            className="w-full max-w-lg rounded-3xl border border-white/80 bg-white p-5 shadow-[0_28px_80px_rgba(24,24,27,0.26)] ring-1 ring-zinc-200/70 sm:p-6"
+          >
+            <div className="mb-5 flex items-start justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-brand-navy text-white shadow-[0_10px_24px_rgba(24,24,27,0.24)]">
+                  <KeyRound className="h-5 w-5" />
+                </div>
+                <div>
+                  <h2 id="demo-credentials-title" className="text-lg font-semibold text-zinc-950">
+                    {t.demo_credentials_title}
+                  </h2>
+                  <p className="mt-1 text-sm leading-6 text-zinc-600">
+                    {t.demo_credentials_description}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setCredentialsOpen(false)}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-700 focus:outline-none focus:ring-2 focus:ring-brand-navy/20"
+                aria-label={t.demo_close_credentials}
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <article className="rounded-2xl border border-zinc-200/80 bg-zinc-50/80 p-4">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-sm font-semibold text-zinc-950">{t.demo_user_one}</h3>
+                  <p className="mt-1 text-xs font-medium uppercase tracking-[0.12em] text-zinc-400">
+                    {t.demo_user_one_description}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleUseAccount}
+                  className="rounded-full bg-zinc-950 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-brand-navy focus:outline-none focus:ring-2 focus:ring-brand-navy/25"
+                >
+                  {t.demo_use_account}
+                </button>
+              </div>
+
+              <CredentialLine
+                label={t.login_email}
+                value={DEMO_ACCOUNT.email}
+                copyLabel={t.demo_copy}
+                copiedLabel={t.demo_copied}
+                manualLabel={t.demo_select}
+                feedback={copyFeedback.key === "user-one-email" ? copyFeedback.status : ""}
+                onCopy={() => handleCopy(DEMO_ACCOUNT.email, "user-one-email")}
+              />
+              <CredentialLine
+                label={t.login_password}
+                value={DEMO_ACCOUNT.password}
+                copyLabel={t.demo_copy}
+                copiedLabel={t.demo_copied}
+                manualLabel={t.demo_select}
+                feedback={copyFeedback.key === "user-one-password" ? copyFeedback.status : ""}
+                onCopy={() => handleCopy(DEMO_ACCOUNT.password, "user-one-password")}
+              />
+            </article>
+          </section>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CredentialLine({
+  label,
+  value,
+  copyLabel,
+  copiedLabel,
+  manualLabel,
+  feedback,
+  onCopy,
+}: {
+  label: string;
+  value: string;
+  copyLabel: string;
+  copiedLabel: string;
+  manualLabel: string;
+  feedback: "copied" | "manual" | "";
+  onCopy: () => void;
+}) {
+  const copied = feedback === "copied";
+  const manual = feedback === "manual";
+
+  return (
+    <div className="mt-2 flex items-center justify-between gap-3 rounded-xl border border-zinc-100 bg-zinc-50 px-3 py-2">
+      <div className="min-w-0">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-400">{label}</p>
+        <p className="mt-0.5 select-all truncate font-mono text-sm text-zinc-800">{value}</p>
+      </div>
+      <button
+        type="button"
+        onClick={onCopy}
+        className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-zinc-600 shadow-sm transition hover:border-brand-navy/25 hover:text-brand-navy focus:outline-none focus:ring-2 focus:ring-brand-navy/20"
+      >
+        {copied ? (
+          <>
+            <Check className="h-3.5 w-3.5 text-emerald-600" />
+            {copiedLabel}
+          </>
+        ) : manual ? (
+          <>
+            <Info className="h-3.5 w-3.5 text-amber-600" />
+            {manualLabel}
+          </>
+        ) : (
+          <>
+            <Copy className="h-3.5 w-3.5" />
+            {copyLabel}
+          </>
+        )}
+      </button>
     </div>
   );
 }

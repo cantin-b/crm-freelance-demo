@@ -72,9 +72,10 @@ function writeListsState(page: number, pageSize: number) {
 
 export function ListsView({ lists: initial }: { lists: ListWithCount[] }) {
   const t = useT();
+  const [initialViewState] = useState(readListsState);
   const [lists, setLists] = useState(initial);
-  const [page, setPage] = useState(() => readListsState().page);
-  const [pageSize, setPageSize] = useState(() => readListsState().pageSize);
+  const [page, setPage] = useState(initialViewState.page);
+  const [pageSize, setPageSize] = useState(initialViewState.pageSize);
   const [toggling, setToggling] = useState<number | null>(null);
   const [deleting, setDeleting] = useState<number | null>(null);
   const totalPages = Math.max(1, Math.ceil(lists.length / pageSize));
@@ -83,12 +84,6 @@ export function ListsView({ lists: initial }: { lists: ListWithCount[] }) {
     const start = (safePage - 1) * pageSize;
     return lists.slice(start, start + pageSize);
   }, [lists, pageSize, safePage]);
-
-  useEffect(() => {
-    if (page > totalPages) {
-      setPage(totalPages);
-    }
-  }, [page, totalPages]);
 
   useEffect(() => {
     writeListsState(safePage, pageSize);

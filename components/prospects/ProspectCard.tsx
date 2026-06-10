@@ -7,6 +7,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { ProspectStatusBadge } from "./ProspectStatusBadge";
+import { getAllowedStatusValues, type Status } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import type { Prospect } from "@/types";
 
@@ -17,6 +18,7 @@ interface Props {
   onSelect: (id: number, checked: boolean) => void;
   onStatusChange: (id: number, status: string) => void;
   onOpenDetail: (id: number) => void;
+  detailBasePath: "/prospects" | "/clients";
   highlighted?: boolean;
 }
 
@@ -27,9 +29,12 @@ export function ProspectCard({
   onSelect,
   onStatusChange,
   onOpenDetail,
+  detailBasePath,
   highlighted,
 }: Props) {
   const router = useRouter();
+  const allowedStatusValues = new Set(getAllowedStatusValues(prospect.status));
+  const allowedStatusOptions = statusOptions.filter(option => allowedStatusValues.has(option.value as Status));
 
   const owners = prospect.owner
     ? prospect.owner.split(";").map(o => o.trim()).filter(Boolean)
@@ -39,7 +44,7 @@ export function ProspectCard({
 
   function navigateToDetail() {
     onOpenDetail(prospect.id);
-    router.push(`/prospects/${prospect.id}`);
+    router.push(`${detailBasePath}/${prospect.id}`);
   }
 
   return (
@@ -107,7 +112,7 @@ export function ProspectCard({
             <SelectValue placeholder="Change status" />
           </SelectTrigger>
           <SelectContent>
-            {statusOptions.map(opt => (
+            {allowedStatusOptions.map(opt => (
               <SelectItem key={opt.value} value={opt.value}>
                 <ProspectStatusBadge status={opt.value} />
               </SelectItem>

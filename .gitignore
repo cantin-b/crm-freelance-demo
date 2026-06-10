@@ -40,17 +40,5 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-/app/generated/prisma
-
-# SQLite database
-/prisma/*.db
-/prisma/*.db-journal
-/prisma/*.db-wal
-/prisma/*.db-shm
-
-# Uploaded documents (keep the folder, ignore its contents)
-/uploads/*
-!/uploads/.gitkeep
-
 # Playwright MCP output
 /.playwright-mcp/

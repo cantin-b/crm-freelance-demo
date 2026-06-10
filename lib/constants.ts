@@ -37,6 +37,54 @@ export const CLIENT_STATUS_OPTIONS = [
   { value: "archived", label: "Archived" },
 ];
 
+const PROSPECT_WORKFLOW_STATUS_VALUES: Status[] = [
+  "new",
+  "contacted",
+  "callback",
+  "not_interested",
+  "no_answer",
+  "proposal_sent",
+];
+
+const STATUS_TRANSITIONS: Partial<Record<Status, Status[]>> = {
+  proposal_sent: ["proposal_sent", "client", "not_interested"],
+  client: ["client", "archived"],
+  archived: ["archived", "client"],
+};
+
+export function getAllowedStatusValues(currentStatus: string): Status[] {
+  if (currentStatus in STATUS_TRANSITIONS) {
+    return STATUS_TRANSITIONS[currentStatus as Status] ?? [];
+  }
+  return PROSPECT_WORKFLOW_STATUS_VALUES;
+}
+
+export function getAllowedStatusOptions(currentStatus: string) {
+  const allowed = new Set(getAllowedStatusValues(currentStatus));
+  return STATUS_OPTIONS.filter(option => allowed.has(option.value));
+}
+
+export function getCommonAllowedStatusOptions(currentStatuses: string[]) {
+  if (currentStatuses.length === 0) return STATUS_OPTIONS;
+  const [firstStatus, ...restStatuses] = currentStatuses;
+  const common = new Set(getAllowedStatusValues(firstStatus));
+  for (const status of restStatuses) {
+    const allowed = new Set(getAllowedStatusValues(status));
+    for (const value of [...common]) {
+      if (!allowed.has(value)) common.delete(value);
+    }
+  }
+  return STATUS_OPTIONS.filter(option => common.has(option.value));
+}
+
+export function isHighValueStatus(status: string) {
+  return status === "proposal_sent" || status === "client" || status === "archived";
+}
+
+export function isAllowedStatusTransition(currentStatus: string, nextStatus: string) {
+  return getAllowedStatusValues(currentStatus).includes(nextStatus as Status);
+}
+
 // Sober status palette — soft 50-tint backgrounds, muted hues, thin inset ring.
 // Mirrors the calm two-tone look of the Calendar event chips.
 export const STATUS_COLORS: Record<Status, string> = {

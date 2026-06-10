@@ -119,6 +119,39 @@ export function DocumentsSection({ prospectId, initialDocuments }: Props) {
     }
   }
 
+  async function openDocument(doc: Document, mode: "view" | "download") {
+    if (doc.data_url) {
+      if (mode === "view") {
+        window.open(doc.data_url, "_blank", "noopener,noreferrer");
+        return;
+      }
+      const link = document.createElement("a");
+      link.href = doc.data_url;
+      link.download = doc.filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      return;
+    }
+
+    const res = await fetch(`/api/documents/${doc.id}/${mode}`);
+    if (!res.ok) return;
+    const blob = await res.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    if (mode === "view") {
+      window.open(objectUrl, "_blank", "noopener,noreferrer");
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 30_000);
+      return;
+    }
+    const link = document.createElement("a");
+    link.href = objectUrl;
+    link.download = doc.filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(objectUrl);
+  }
+
   return (
     <div className="space-y-4">
       {/* Document list */}
@@ -157,7 +190,7 @@ export function DocumentsSection({ prospectId, initialDocuments }: Props) {
                 ) && (
                   <button
                     type="button"
-                    onClick={() => window.open(`/api/documents/${doc.id}/view`, "_blank")}
+                    onClick={() => void openDocument(doc, "view")}
                     title="Preview"
                     className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-700"
                   >
@@ -166,7 +199,7 @@ export function DocumentsSection({ prospectId, initialDocuments }: Props) {
                 )}
                 <button
                   type="button"
-                  onClick={() => window.open(`/api/documents/${doc.id}/download`)}
+                  onClick={() => void openDocument(doc, "download")}
                   title="Download"
                   className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-700"
                 >

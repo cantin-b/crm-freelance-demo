@@ -12,6 +12,7 @@ import {
   PROSPECT_FILTER_STATUS_OPTIONS,
   PROSPECT_ROW_STATUS_OPTIONS,
   CLIENT_STATUS_OPTIONS,
+  STATUS_OPTIONS,
 } from "@/lib/constants";
 import { useT } from "@/components/providers/UiLanguageProvider";
 import type { Prospect } from "@/types";
@@ -128,8 +129,13 @@ function readListState(storageKey: string, source: ListViewSource): SavedListSta
   const fallback = createDefaultListState();
   if (typeof window === "undefined") return fallback;
 
+  const hasSavedState = localStorage.getItem(storageKey) !== null;
+  const hasLegacyProspectFilters =
+    storageKey === PROSPECTS_STATE_KEY && localStorage.getItem(LEGACY_PROSPECT_FILTERS_KEY) !== null;
+
   try {
-    const saved = JSON.parse(localStorage.getItem(storageKey) ?? "null") as Partial<SavedListState> | null;
+    const savedRaw = hasSavedState ? localStorage.getItem(storageKey) ?? "null" : "null";
+    const saved = JSON.parse(savedRaw) as Partial<SavedListState> | null;
     if (saved) {
       const pageSize = sanitizePositiveNumber(saved.pageSize, DEFAULT_PAGE_SIZE);
       return {
@@ -146,7 +152,7 @@ function readListState(storageKey: string, source: ListViewSource): SavedListSta
     // Ignore malformed saved state and fall back to defaults.
   }
 
-  if (storageKey === PROSPECTS_STATE_KEY) {
+  if (hasLegacyProspectFilters) {
     try {
       const legacy = JSON.parse(localStorage.getItem(LEGACY_PROSPECT_FILTERS_KEY) ?? "null") as {
         filters?: unknown;
@@ -162,6 +168,16 @@ function readListState(storageKey: string, source: ListViewSource): SavedListSta
     } catch {
       // Ignore legacy state as well.
     }
+  }
+
+  if (source === "prospects" && !hasSavedState && !hasLegacyProspectFilters) {
+    return {
+      ...fallback,
+      filters: {
+        ...fallback.filters,
+        statuses: ["new"],
+      },
+    };
   }
 
   return fallback;
@@ -197,15 +213,11 @@ export function ProspectsView({
   const isClientsView = apiUrl === "/api/clients";
   const viewSource: ListViewSource = isClientsView ? "clients" : "prospects";
   const storageKey = getViewStorageKey(viewSource);
-  const initialListStateRef = useRef<SavedListState | null>(null);
-  if (!initialListStateRef.current) {
-    initialListStateRef.current = readListState(storageKey, viewSource);
-  }
-  const initialListState = initialListStateRef.current;
+  const [initialListState] = useState(() => readListState(storageKey, viewSource));
   const visibleFilters = isClientsView ? CLIENT_VISIBLE_FILTERS : PROSPECT_VISIBLE_FILTERS;
   const filterStatusOptions = (isClientsView ? CLIENT_STATUS_OPTIONS : PROSPECT_FILTER_STATUS_OPTIONS)
     .map(o => ({ ...o, label: t.status(o.value) }));
-  const rowStatusOptions = (isClientsView ? CLIENT_STATUS_OPTIONS : PROSPECT_ROW_STATUS_OPTIONS)
+  const rowStatusOptions = (isClientsView ? STATUS_OPTIONS : PROSPECT_ROW_STATUS_OPTIONS)
     .map(o => ({ ...o, label: t.status(o.value) }));
 
   const [filters, setFilters] = useState<Filters>(initialListState.filters);
@@ -241,8 +253,7 @@ export function ProspectsView({
     pendingScrollIdRef.current = null;
     setPage(1);
     setSelectedIds(new Set());
-  }, [filters.countries.join(), filters.categories.join(), filters.statuses.join(),
-      filters.hasEmail, filters.hasWebsite, filters.listName, debouncedSearch]);
+  }, [filters, debouncedSearch]);
 
   useEffect(() => {
     const nextFilters = normalizeFiltersForSource(filters, viewSource);
@@ -292,7 +303,10 @@ export function ProspectsView({
       debouncedSearch, page, pageSize, apiUrl, isClientsView]);
 
   useEffect(() => {
-    fetchData();
+    const id = window.setTimeout(() => {
+      void fetchData();
+    }, 0);
+    return () => window.clearTimeout(id);
   }, [fetchData]);
 
   useEffect(() => {
@@ -466,9 +480,25 @@ export function ProspectsView({
     fetchData();
   }
 
+  async function downloadCsv(url: string) {
+    const res = await fetch(url);
+    if (!res.ok) return;
+    const blob = await res.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const disposition = res.headers.get("Content-Disposition") ?? "";
+    const filenameMatch = /filename="([^"]+)"/.exec(disposition);
+    link.href = objectUrl;
+    link.download = filenameMatch?.[1] ?? `prospects_demo_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(objectUrl);
+  }
+
   function handleBulkExport() {
     const ids = [...selectedIds].join(",");
-    window.location.href = `/api/prospects/export?ids=${ids}`;
+    void downloadCsv(`/api/prospects/export?ids=${ids}`);
   }
 
   function handleExportAll() {
@@ -480,7 +510,8 @@ export function ProspectsView({
     if (!isClientsView && filters.hasWebsite !== "all") params.set("hasWebsite", filters.hasWebsite);
     if (!isClientsView && filters.listName) params.set("listName", filters.listName);
     if (debouncedSearch) params.set("search", debouncedSearch);
-    window.location.href = `/api/prospects/export?${params}`;
+    if (isClientsView) params.set("source", "clients");
+    void downloadCsv(`/api/prospects/export?${params}`);
   }
 
   const hasActiveFilters =
@@ -547,6 +578,7 @@ export function ProspectsView({
         pageSize={pageSize}
         onPageSizeChange={handlePageSizeChange}
         highlightedId={highlightedId}
+        detailBasePath={isClientsView ? "/clients" : "/prospects"}
       />
     </div>
   );

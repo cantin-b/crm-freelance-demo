@@ -4,7 +4,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   Phone, ArrowRight, ExternalLink, Video, MessageSquare, CalendarRange,
-  Loader2, ChevronLeft, ChevronRight, CalendarDays, CalendarClock,
+  Loader2, ChevronLeft, ChevronRight, CalendarDays,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import {
-  getMonthGrid, getWeekDays, isSameDay, isSameMonth, isToday,
+  getMonthGrid, getWeekDays, isSameMonth, isToday,
   getEventsForDay, getEventPosition, formatTime, formatMonthLabel,
   formatWeekRange, formatDayLabel,
 } from "@/lib/calendarUtils";
@@ -602,13 +602,14 @@ function TimeGrid({
   singleDay?: boolean;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const scrollAnchor = days[0]?.toDateString();
 
   // Scroll to ~07:30 on mount / view change so the work day is centered.
   useLayoutEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = 7.5 * HOUR_HEIGHT - 16;
     }
-  }, [singleDay, days[0]?.toDateString()]);
+  }, [singleDay, scrollAnchor]);
 
   return (
     <div className="flex h-full flex-col">

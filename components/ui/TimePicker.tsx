@@ -1,7 +1,5 @@
 "use client";
 
-import { useState, useEffect } from "react";
-
 const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
 const MINUTES = ["00", "15", "30", "45"];
 
@@ -15,20 +13,9 @@ type Props = {
 };
 
 export function TimePicker({ value, onChange, disabled }: Props) {
-  const [selectedHour, setSelectedHour] = useState(() =>
-    value ? value.split(":")[0] : ""
-  );
-  const [selectedMinute, setSelectedMinute] = useState(() =>
-    value ? value.split(":")[1] : ""
-  );
-
-  useEffect(() => {
-    setSelectedHour(value ? value.split(":")[0] : "");
-    setSelectedMinute(value ? value.split(":")[1] : "");
-  }, [value]);
+  const [selectedHour = "", selectedMinute = ""] = value ? value.split(":") : ["", ""];
 
   function handleHourChange(h: string) {
-    setSelectedHour(h);
     if (h && selectedMinute) {
       onChange(`${h}:${selectedMinute}`);
     } else {
@@ -37,7 +24,6 @@ export function TimePicker({ value, onChange, disabled }: Props) {
   }
 
   function handleMinuteChange(m: string) {
-    setSelectedMinute(m);
     if (selectedHour && m) {
       onChange(`${selectedHour}:${m}`);
     } else {

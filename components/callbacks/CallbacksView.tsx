@@ -313,13 +313,13 @@ export function CallbacksView({ precise, vague }: Props) {
   const [sortAsc, setSortAsc] = useState(initialViewState.sortAsc);
 
   const total = precise.length + vague.length;
+  const [now] = useState(() => Date.now());
 
   useEffect(() => {
     writeCallbacksState(show, sortAsc);
   }, [show, sortAsc]);
 
   // Split the dated callbacks into overdue / upcoming relative to now
-  const now = Date.now();
   const isOverdue = (p: CallbackProspect) =>
     p.callback_at !== null && new Date(p.callback_at).getTime() < now;
 

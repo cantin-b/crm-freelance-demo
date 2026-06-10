@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { ProspectDetailLoader } from "@/components/prospects/ProspectDetailLoader";
 
-export default async function ProspectDetailPage({
+export default async function ClientDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
@@ -10,5 +10,5 @@ export default async function ProspectDetailPage({
   const numId = parseInt(id, 10);
   if (isNaN(numId)) notFound();
 
-  return <ProspectDetailLoader id={numId} source="prospects" />;
+  return <ProspectDetailLoader id={numId} source="clients" />;
 }

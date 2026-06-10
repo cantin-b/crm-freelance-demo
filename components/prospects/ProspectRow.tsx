@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ProspectStatusBadge } from "./ProspectStatusBadge";
 import { useT } from "@/components/providers/UiLanguageProvider";
+import { getAllowedStatusValues, type Status } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import type { Prospect } from "@/types";
 
@@ -22,6 +23,7 @@ interface Props {
   onDelete: (id: number) => void;
   onEmailClick: (prospect: Prospect) => void;
   onOpenDetail: (id: number) => void;
+  detailBasePath: "/prospects" | "/clients";
   highlighted?: boolean;
 }
 
@@ -34,14 +36,17 @@ export function ProspectRow({
   onDelete,
   onEmailClick,
   onOpenDetail,
+  detailBasePath,
   highlighted,
 }: Props) {
   const router = useRouter();
   const t = useT();
+  const allowedStatusValues = new Set(getAllowedStatusValues(prospect.status));
+  const allowedStatusOptions = statusOptions.filter(option => allowedStatusValues.has(option.value as Status));
 
   function navigateToDetail() {
     onOpenDetail(prospect.id);
-    router.push(`/prospects/${prospect.id}`);
+    router.push(`${detailBasePath}/${prospect.id}`);
   }
 
   // Owner: split on ";" and show as tags if multiple
@@ -147,7 +152,7 @@ export function ProspectRow({
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
-            {statusOptions.map(opt => (
+            {allowedStatusOptions.map(opt => (
               <DropdownMenuItem
                 key={opt.value}
                 onSelect={() => onStatusChange(prospect.id, opt.value)}

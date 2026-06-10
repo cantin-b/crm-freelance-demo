@@ -17,6 +17,7 @@ import { ProspectRow } from "./ProspectRow";
 import { ProspectCard } from "./ProspectCard";
 import { ProspectStatusBadge } from "./ProspectStatusBadge";
 import { useT } from "@/components/providers/UiLanguageProvider";
+import { getCommonAllowedStatusOptions } from "@/lib/constants";
 import type { Prospect } from "@/types";
 
 function SkeletonCell({ className }: { className?: string }) {
@@ -65,6 +66,7 @@ interface Props {
   pageSize: number;
   onPageSizeChange: (size: number) => void;
   highlightedId?: number | null;
+  detailBasePath: "/prospects" | "/clients";
 }
 
 export function ProspectTable({
@@ -89,10 +91,13 @@ export function ProspectTable({
   pageSize,
   onPageSizeChange,
   highlightedId,
+  detailBasePath,
 }: Props) {
   const t = useT();
   const allSelected = prospects.length > 0 && prospects.every(p => selectedIds.has(p.id));
   const someSelected = selectedIds.size > 0;
+  const selectedProspects = prospects.filter(prospect => selectedIds.has(prospect.id));
+  const bulkStatusOptions = getCommonAllowedStatusOptions(selectedProspects.map(prospect => prospect.status));
 
   return (
     <div className="flex flex-col gap-0">
@@ -103,15 +108,20 @@ export function ProspectTable({
             {t.x_selected(selectedIds.size)}
           </span>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button size="sm" variant="outline" className="h-7 text-xs border-zinc-700 text-zinc-100 hover:bg-zinc-800 hover:text-white bg-transparent">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={bulkStatusOptions.length === 0}
+                className="h-7 text-xs border-zinc-700 text-zinc-100 hover:bg-zinc-800 hover:text-white bg-transparent disabled:opacity-40"
+              >
                 <RefreshCw className="w-3 h-3" />
                 {t.bulk_change_status}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
-              {statusOptions.map(opt => (
+              {bulkStatusOptions.map(opt => (
                 <DropdownMenuItem key={opt.value} onSelect={() => onBulkStatusChange(opt.value)}>
                   <ProspectStatusBadge status={opt.value} />
                 </DropdownMenuItem>
@@ -196,6 +206,7 @@ export function ProspectTable({
                   onDelete={onDelete}
                   onEmailClick={onEmailClick}
                   onOpenDetail={onOpenDetail}
+                  detailBasePath={detailBasePath}
                   highlighted={highlightedId === prospect.id}
                 />
               ))
@@ -234,6 +245,7 @@ export function ProspectTable({
               onSelect={onSelect}
               onStatusChange={onStatusChange}
               onOpenDetail={onOpenDetail}
+              detailBasePath={detailBasePath}
               highlighted={highlightedId === prospect.id}
             />
           ))

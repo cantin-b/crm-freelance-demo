@@ -24,7 +24,11 @@ import { OpeningHours } from "./OpeningHours";
 import { SendEmailModal } from "./SendEmailModal";
 import { DocumentsSection } from "./DocumentsSection";
 import { AppointmentsSection } from "./AppointmentsSection";
-import { STATUS_OPTIONS, COUNTRY_OPTIONS } from "@/lib/constants";
+import {
+  COUNTRY_OPTIONS,
+  getAllowedStatusOptions,
+  isHighValueStatus,
+} from "@/lib/constants";
 import { useT } from "@/components/providers/UiLanguageProvider";
 import { cn } from "@/lib/utils";
 import type { Prospect, Document as ProspectDocument, Appointment } from "@/types";
@@ -207,7 +211,7 @@ function markProspectVisitInStoredList(source: DetailSource, prospectId: number)
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export function ProspectDetail({ prospect: initial }: { prospect: ProspectData }) {
+export function ProspectDetail({ prospect: initial, source }: { prospect: ProspectData; source?: DetailSource }) {
   const router = useRouter();
   const t = useT();
   const [data, setData] = useState<ProspectData>(initial);
@@ -225,9 +229,16 @@ export function ProspectDetail({ prospect: initial }: { prospect: ProspectData }
   const [appointmentsLoaded, setAppointmentsLoaded] = useState(false);
   const savedTimerRef = useRef<NodeJS.Timeout | null>(null);
   const rootRef = useRef<HTMLDivElement | null>(null);
-  const [navIds, setNavIds] = useState<number[]>([]);
+  const [initialNavigation] = useState(() => {
+    const resolvedSource = source ?? getStoredDetailSource();
+    return {
+      source: resolvedSource,
+      navIds: readStoredNavIds(resolvedSource),
+    };
+  });
+  const navIds = initialNavigation.navIds;
   const [showScrollTop, setShowScrollTop] = useState(false);
-  const [detailSource, setDetailSource] = useState<DetailSource>("prospects");
+  const detailSource = initialNavigation.source;
 
   const showDocuments = DOCUMENT_STATUSES.includes(data.status);
   const showAppointments = APPOINTMENT_STATUSES.includes(data.status);
@@ -281,11 +292,8 @@ export function ProspectDetail({ prospect: initial }: { prospect: ProspectData }
 
   // Read prev/next navigation list from the last list view that opened this detail.
   useEffect(() => {
-    const source = getStoredDetailSource();
-    setDetailSource(source);
-    setNavIds(readStoredNavIds(source));
-    markProspectVisitInStoredList(source, data.id);
-  }, [data.id]);
+    markProspectVisitInStoredList(detailSource, data.id);
+  }, [data.id, detailSource]);
 
   useEffect(() => {
     const scrollContainer = rootRef.current?.closest("main");
@@ -337,6 +345,10 @@ export function ProspectDetail({ prospect: initial }: { prospect: ProspectData }
       });
       if (!res.ok) throw new Error("Save failed.");
       setJustSaved(true);
+      if (detailSource === "clients" && !isHighValueStatus(data.status)) {
+        localStorage.setItem(DETAIL_SOURCE_KEY, "prospects");
+        router.replace(`/prospects/${data.id}`);
+      }
     } catch {
       setError(t.failed_to_save);
     } finally {
@@ -384,6 +396,7 @@ export function ProspectDetail({ prospect: initial }: { prospect: ProspectData }
   );
 
   const scheduledCount = appointments.filter(a => a.status === "scheduled").length;
+  const statusOptions = getAllowedStatusOptions(data.status);
 
   const navIndex = navIds.indexOf(data.id);
   const prevId = navIndex > 0 ? navIds[navIndex - 1] : null;
@@ -391,10 +404,11 @@ export function ProspectDetail({ prospect: initial }: { prospect: ProspectData }
   const showNav = navIds.length > 0 && navIndex >= 0;
   const backHref = detailSource === "clients" ? "/clients" : "/prospects";
   const backLabel = detailSource === "clients" ? t.page_clients : t.back_to_prospects;
+  const detailBaseHref = detailSource === "clients" && isHighValueStatus(data.status) ? "/clients" : "/prospects";
 
   function navigateToProspect(id: number) {
     markProspectVisitInStoredList(detailSource, id);
-    router.push(`/prospects/${id}`);
+    router.push(`${detailBaseHref}/${id}`);
   }
 
   const saveButton = (
@@ -430,7 +444,9 @@ export function ProspectDetail({ prospect: initial }: { prospect: ProspectData }
         prospect={data}
         open={emailOpen}
         onClose={() => setEmailOpen(false)}
-        onSent={() => update("status", "contacted")}
+        onSent={() => {
+          if (data.status === "new") update("status", "contacted");
+        }}
       />
 
       {/* ── Mobile action header ── */}
@@ -637,7 +653,7 @@ export function ProspectDetail({ prospect: initial }: { prospect: ProspectData }
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {STATUS_OPTIONS.map(o => (
+              {statusOptions.map(o => (
                 <SelectItem key={o.value} value={o.value}>
                   <ProspectStatusBadge status={o.value} />
                 </SelectItem>
@@ -1137,7 +1153,7 @@ export function ProspectDetail({ prospect: initial }: { prospect: ProspectData }
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {STATUS_OPTIONS.map(o => (
+                  {statusOptions.map(o => (
                     <SelectItem key={o.value} value={o.value}>
                       <ProspectStatusBadge status={o.value} />
                     </SelectItem>

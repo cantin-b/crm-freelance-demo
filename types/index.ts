@@ -6,6 +6,8 @@ export interface Document {
   category: string;
   size: number;
   created_at: string;
+  data_url?: string;
+  mime_type?: string;
 }
 
 export interface Appointment {

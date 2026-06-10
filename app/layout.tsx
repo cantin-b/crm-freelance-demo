@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
 import { AppShell } from "@/components/layout/AppShell";
-import { prisma } from "@/lib/prisma";
 import type { Language } from "@/lib/constants";
 
 const geist = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
@@ -18,12 +17,8 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const settings = await prisma.settings.findFirst({
-    where: { id: 1 },
-    select: { ui_language: true },
-  });
-  const uiLanguage: Language = settings?.ui_language === "fr" ? "fr" : "en";
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const uiLanguage: Language = "en";
 
   return (
     <html lang={uiLanguage} className={`${geist.variable} h-full`}>

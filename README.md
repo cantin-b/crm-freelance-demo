@@ -1,125 +1,99 @@
-# Freelance CRM
+# CRM Freelance Demo
 
-Personal prospecting CRM for cold outreach to small businesses (tradespeople: painters, plumbers, electricians, landscapers, etc.) in French-speaking countries — CH, FR, BE, LU.
+Portfolio demo of a personal CRM for freelance web prospecting. It looks and behaves like a real cold-outreach CRM, but it intentionally has no database, no SMTP server, and no server-side authentication.
 
-Built with Next.js App Router, SQLite via Prisma, and shadcn/ui. Password-protected (single user).
+All demo data lives in browser-side React state. Mutations are synced between open tabs with `BroadcastChannel`; they reset when no live tab can provide the modified state, such as after closing the demo and opening it again later. This keeps the public demo safe to publish while still allowing visitors to edit prospects, schedule callbacks, add appointments, upload demo documents, edit templates, and export CSV files.
+
+## Demo Access
+
+Use the login helper shown on `/login`, or enter the credentials manually:
+
+```text
+Email: userone@mail.com
+Password: userone
+```
+
+The login form includes a "Demo access available" banner and a credentials modal inspired by the Scooter Rental demo.
+
+## Demo Behavior
+
+- The initial dataset is defined in `lib/demoSeedData.ts`.
+- The seed contains 100 fictional prospects across Belgium, France, and Switzerland.
+- Some prospects include website links pointing to `https://cantinbartel.dev/`.
+- Demo state is created in `components/providers/DemoDataProvider.tsx`.
+- Same-origin `/api/...` calls are intercepted in the browser and handled from React state.
+- `app/api/[...demo]/route.ts` is only a fallback for direct API hits.
+- CSV import is disabled in the public demo.
+- CSV export still works and is generated from the current demo state.
+- Email sending is simulated and can update prospect status.
+- Documents are stored as in-memory data URLs, not on disk.
+- Appointments include basic conflict detection and callback warnings.
 
 ## Features
 
-- **Login** — password-protected with a JWT session cookie. First login sets the password; forgot-password emails a new one.
-- **Prospects list** — filterable by country, category, status, email/website presence, and import batch. Only prospects from visible lists are shown; high-value prospects (proposal_sent, client, archived) are always visible. Bulk status change, bulk export, bulk delete.
-- **Prospect detail** — edit all fields inline, manage callbacks (scheduled or freeform note), rich notes, attached documents, and appointments.
-- **Appointments** — schedule phone calls and video calls for prospects with conflict detection. Global list view at `/appointments` grouped by Today/This Week/Upcoming/Past.
-- **Calendar** — custom Google-Calendar-style month/week/day views at `/calendar` combining all scheduled appointments and pending callbacks. Clicking a day cell opens the day view; clicking an event opens its modal. Mobile shows month + day only.
-- **Documents** — upload PDFs, images, Word, and Excel files per prospect. Preview (PDF/images) and download inline.
-- **Lists** — manage import batches: toggle visibility to show/hide a batch's prospects, delete a list with a cascade that preserves high-value prospects.
-- **CSV import** — drag & drop at `/lists/new`, auto-detects 17 columns by header name, duplicate detection by Google Maps URL. Creates a List record automatically on import.
-- **Clients** — dedicated view of all prospects with status `proposal_sent`, `client`, or `archived`, regardless of list visibility.
-- **Email templates** — TipTap rich text editor, organized by category, with FR and EN template libraries. Variables: `{{name}}`, `{{owner}}`, `{{city}}`, `{{website}}`, and sender variables.
-- **Send email** — pick a template (grouped by category, filtered to active content language), variables auto-replaced with prospect data, send via Gmail SMTP. Supports file attachments up to 10 MB.
-- **Callbacks** — filtered view of prospects awaiting follow-up, sorted by scheduled date.
-- **Export** — download current filtered view or selected rows as CSV.
-- **Settings** — configure Gmail credentials, sender profile, email signature, language preferences, and password.
-- **Multi-language** — two independent language axes:
-  - *UI language* (Settings → Language → Interface language): switches the CRM interface between English and French. Default: English.
-  - *Content language* (Settings → Language → Content language): controls which email template library (FR or EN) is shown and the language of the email signature. Default: French.
+- Prospects list with search, filters, pagination, bulk status updates, bulk delete, and CSV export.
+- Prospect detail page with editable CRM fields, callback mode, notes, documents, email modal, and appointments.
+- Callback dashboard grouped by overdue, scheduled, and unscheduled callbacks.
+- Appointment dashboard grouped by Today, This Week, Upcoming, and Past.
+- Custom calendar with month, week, and day views.
+- Clients view for `proposal_sent`, `client`, and `archived` prospects.
+- Lists view to show, hide, or delete the preloaded demo batch.
+- TipTap email templates with French and English content libraries.
+- Settings page for demo profile, signature, UI language, content language, and demo password change.
+- Two independent language axes:
+  - UI language controls CRM interface text.
+  - Content language controls templates and signature text.
 
 ## Setup
 
-### 1. Install dependencies
+No environment variables are required for the demo.
 
 ```bash
 npm install
-```
-
-### 2. Configure environment
-
-Create a `.env` file at the project root:
-
-```
-DATABASE_URL="file:./prisma/dev.db"
-AUTH_SECRET="<any long random string>"
-```
-
-`AUTH_SECRET` is used to sign the session JWT. Generate one with `openssl rand -base64 32`.
-
-### 3. Run migrations
-
-```bash
-npx prisma migrate deploy
-```
-
-This creates `prisma/dev.db`.
-
-### 4. Seed email templates (optional)
-
-The repository ships with a French template seed (run automatically on first migration) and a separate English seed:
-
-```bash
-npm run seed:templates      # French templates (21)
-npm run seed:templates:en   # English templates (21) — idempotent, safe to re-run
-```
-
-### 5. Start the dev server
-
-```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). You will be redirected to `/login`. The first login attempt sets the password.
+Open [http://localhost:3000](http://localhost:3000). You will be redirected to `/login`.
 
-## Gmail setup
+Production checks:
 
-The app sends email via Gmail SMTP using an **App Password** (not your main account password).
-
-1. Enable 2-factor authentication on your Google account
-2. Go to Google Account → Security → App Passwords
-3. Generate a password for "Mail"
-4. Go to `/settings` in the app and enter your Gmail address + App Password
-
-The Gmail address configured in Settings is also used as the login email.
-
-## CSV format
-
-The importer auto-detects columns by exact header name. Supported columns:
-
+```bash
+npm run lint
+npm run build
 ```
+
+## Tech Stack
+
+| Layer | Library |
+|---|---|
+| Framework | Next.js 16 App Router |
+| Runtime state | React state + BroadcastChannel |
+| Styling | Tailwind CSS v4 |
+| UI | shadcn/ui |
+| Rich text | TipTap |
+| CSV parsing | PapaParse |
+| Icons | Lucide React |
+| i18n | Custom dictionary in `lib/i18n.ts` + `useT()` |
+
+## Important Files
+
+- `components/providers/DemoDataProvider.tsx` - demo datastore, fetch interception, tab sync.
+- `lib/demoSeedData.ts` - fictional seed data, demo credentials, default settings.
+- `components/auth/LoginForm.tsx` - login form and demo credentials UI.
+- `components/demo/DemoPageLoaders.tsx` - client loaders that replace former server DB reads.
+- `components/import/CsvImporter.tsx` - public import-disabled screen.
+- `app/api/[...demo]/route.ts` - static fallback for direct API calls.
+- `lib/i18n.ts` - English and French UI copy.
+- `types/index.ts` - shared manual app types.
+
+## CSV Columns
+
+The export keeps the original CRM-oriented shape:
+
+```text
 name, category, address, postal_code, city, country, phone, email,
 website, gm_link, rating, reviews_count, opening_hours, owner,
 facebook_url, instagram_url, linkedin_url
 ```
 
-- `name` is the only required column
-- `gm_link` is used for duplicate detection — rows with a `gm_link` already in the database are skipped
-- `owner` supports multiple owners separated by `;` (e.g. `Jean Dupont;Marie Martin`)
-- `country` should be ISO 2-letter codes: `CH`, `FR`, `BE`, `LU`
-
-## Navigation
-
-Sidebar order: **Prospects** / **Callbacks** / **Appointments** / **Calendar** / **Clients** / **Lists** / **Templates** / **Settings**
-
-Mobile bottom nav: **Prospects** / **Callbacks** / **Appts** / **Cal** / **Clients** / **Lists** / **Templates**
-
-## Status pipeline
-
-```
-new → contacted → callback → not_interested
-                           → no_answer
-                           → proposal_sent → client → archived
-```
-
-Statuses `proposal_sent`, `client`, and `archived` are considered **high-value** — prospects with these statuses are always visible on the Prospects page and in the Clients view, even if their source list is hidden or deleted.
-
-## Tech stack
-
-| | |
-|---|---|
-| Framework | Next.js 16 (App Router) |
-| Database | SQLite via Prisma 7 + `better-sqlite3` |
-| UI | shadcn/ui + Tailwind CSS v4 |
-| Rich text | TipTap 2 |
-| Email | Nodemailer (Gmail SMTP) |
-| Auth | jose (JWT) + bcryptjs |
-| Calendar | Custom Google-Calendar-style views (no external calendar library) |
-| Icons | Lucide React |
-| i18n | Custom context-based system (`lib/i18n.ts` + `useT()` hook) — no external library |
+Import is intentionally disabled because this project is public and should not accept or store real scraped prospect data.

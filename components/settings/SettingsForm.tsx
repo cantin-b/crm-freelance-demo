@@ -268,13 +268,13 @@ export function SettingsForm({ initialSettings }: Props) {
       const data = await res.json() as { ok?: boolean; error?: string };
       if (!res.ok || data.error) {
         keepSectionOpen("smtp");
-        setSmtpStatus({ type: "error", message: data.error ?? "Test failed." });
+        setSmtpStatus({ type: "error", message: data.error ?? t.settings_test_failed });
       } else {
-        setSmtpStatus({ type: "success", message: `Test email sent to ${gmailUser}.` });
+        setSmtpStatus({ type: "success", message: t.settings_test_success(gmailUser) });
       }
     } catch (err) {
       keepSectionOpen("smtp");
-      setSmtpStatus({ type: "error", message: err instanceof Error ? err.message : "Connection failed." });
+      setSmtpStatus({ type: "error", message: err instanceof Error ? err.message : t.settings_connection_failed });
     } finally {
       setSmtpTesting(false);
     }
@@ -434,18 +434,7 @@ export function SettingsForm({ initialSettings }: Props) {
         onToggle={toggleSection}
       >
         <div className="space-y-4">
-          <p className="text-sm text-zinc-500">
-            {t.settings_smtp_app_password_hint}{" "}
-            <a
-              href="https://support.google.com/accounts/answer/185833"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline underline-offset-2"
-            >
-              {t.settings_smtp_app_password_link}
-            </a>
-            {t.settings_smtp_not_main_password}
-          </p>
+          <p className="text-sm text-zinc-500">{t.settings_smtp_demo_notice}</p>
 
           <div className="space-y-1.5">
             <Label htmlFor="gmail_user">{t.settings_smtp_gmail_address}</Label>

@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Upload, FileText, CheckCircle2, Loader2, AlertCircle, RotateCcw, Tag, Info,
+  Upload, FileText, CheckCircle2, Loader2, AlertCircle, RotateCcw, Tag, Info, Lock,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -124,6 +124,24 @@ export function CsvImporter() {
     .filter((category): category is string => Boolean(category));
   const detectedCategoryGroups = groupRawCategories(rawCategories, language);
   const recommendedGroups = getRecommendedCategoryGroups(language);
+
+  const importDisabled = process.env.NEXT_PUBLIC_CRM_DEMO_IMPORT_DISABLED !== "false";
+  if (importDisabled) {
+    return (
+      <div className="rounded-xl border border-zinc-200/90 bg-white/95 p-6 text-center shadow-surface">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-zinc-100 text-zinc-500">
+          <Lock className="h-5 w-5" />
+        </div>
+        <h2 className="mt-4 text-base font-semibold text-zinc-900">{t.import_demo_disabled_title}</h2>
+        <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-zinc-500">
+          {t.import_demo_disabled_desc}
+        </p>
+        <Button onClick={() => router.push("/prospects")} className="mt-5">
+          {t.import_demo_disabled_action}
+        </Button>
+      </div>
+    );
+  }
 
   if (step === "idle") {
     return (
