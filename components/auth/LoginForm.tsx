@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useT } from "@/components/providers/UiLanguageProvider";
+import type { Language } from "@/lib/constants";
+import { writeDemoLanguagePreference } from "@/lib/demoLanguage";
 
 const DEMO_ACCOUNT = {
   id: "user-one",
@@ -126,6 +128,25 @@ export function LoginForm() {
     }
   }
 
+  async function handleDemoLanguageChange(language: Language) {
+    if (language === t.ui_language) return;
+
+    writeDemoLanguagePreference(language);
+    try {
+      await fetch("/api/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ui_language: language,
+          content_language: language,
+          persist_language_preference: true,
+        }),
+      });
+    } catch {
+      /* Keep the stored preference; AppShell will use it on the next load. */
+    }
+  }
+
   function handleAcknowledgeDemoNotice() {
     try {
       localStorage.setItem(DEMO_NOTICE_STORAGE_KEY, "true");
@@ -215,7 +236,34 @@ export function LoginForm() {
               <Info className="h-4 w-4" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-zinc-950">{t.demo_notice_title}</p>
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-sm font-semibold text-zinc-950">{t.demo_notice_title}</p>
+                <div
+                  className="inline-flex rounded-full border border-zinc-200 bg-zinc-50 p-0.5"
+                  role="group"
+                  aria-label={t.demo_language_switch_label}
+                >
+                  {(["fr", "en"] as const).map((language) => {
+                    const active = t.ui_language === language;
+                    return (
+                      <button
+                        key={language}
+                        type="button"
+                        onClick={() => handleDemoLanguageChange(language)}
+                        aria-pressed={active}
+                        aria-label={language === "fr" ? t.demo_language_fr : t.demo_language_en}
+                        className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition ${
+                          active
+                            ? "bg-zinc-950 text-white shadow-sm"
+                            : "text-zinc-500 hover:bg-white hover:text-zinc-900"
+                        }`}
+                      >
+                        {language.toUpperCase()}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
               <p className="mt-1 text-xs leading-5 text-zinc-500">{t.demo_notice_body}</p>
             </div>
             <button

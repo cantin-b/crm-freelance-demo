@@ -14,6 +14,7 @@ import {
   DemoDataProvider,
 } from "@/components/providers/DemoDataProvider";
 import type { Language } from "@/lib/constants";
+import { resolveDemoEntryLanguage, writeDemoLanguagePreference } from "@/lib/demoLanguage";
 
 export function AppShell({
   uiLanguage,
@@ -29,22 +30,56 @@ export function AppShell({
   useEffect(() => {
     let cancelled = false;
 
-    async function loadLanguage() {
+    async function readSettings() {
+      const res = await fetch("/api/settings");
+      if (!res.ok) return null;
+      return await res.json() as { ui_language?: string; content_language?: string };
+    }
+
+    async function loadLanguageFromSettings() {
       try {
-        const res = await fetch("/api/settings");
-        if (!res.ok) return;
-        const settings = await res.json() as { ui_language?: string };
+        const settings = await readSettings();
+        if (!settings) return;
         if (!cancelled) setLanguage(settings.ui_language === "fr" ? "fr" : "en");
       } catch {
         /* Keep the initial language. */
       }
     }
 
-    loadLanguage();
-    window.addEventListener(DEMO_STATE_UPDATED_EVENT, loadLanguage);
+    async function applyEntryLanguage() {
+      const entryLanguage = resolveDemoEntryLanguage(window.location);
+      if (entryLanguage.source === "query") {
+        writeDemoLanguagePreference(entryLanguage.language);
+      }
+
+      try {
+        const settings = await readSettings();
+        if (cancelled) return;
+
+        setLanguage(entryLanguage.language);
+        if (
+          settings?.ui_language !== entryLanguage.language ||
+          settings?.content_language !== entryLanguage.language
+        ) {
+          await fetch("/api/settings", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              ui_language: entryLanguage.language,
+              content_language: entryLanguage.language,
+            }),
+          });
+        }
+      } catch {
+        if (!cancelled) setLanguage(entryLanguage.language);
+      }
+    }
+
+    applyEntryLanguage();
+    window.addEventListener(DEMO_STATE_UPDATED_EVENT, loadLanguageFromSettings);
     return () => {
       cancelled = true;
-      window.removeEventListener(DEMO_STATE_UPDATED_EVENT, loadLanguage);
+      window.removeEventListener(DEMO_STATE_UPDATED_EVENT, loadLanguageFromSettings);
     };
   }, []);
 

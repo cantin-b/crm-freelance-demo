@@ -4,6 +4,7 @@ import { useEffect, useInsertionEffect, useRef, useState } from "react";
 import type { MutableRefObject, ReactNode } from "react";
 import { createDemoSeedData, type DemoAppointment, type DemoDocument, type DemoProspect, type DemoState } from "@/lib/demoSeedData";
 import { isAllowedStatusTransition } from "@/lib/constants";
+import { normalizeDemoLanguage, writeDemoLanguagePreference } from "@/lib/demoLanguage";
 
 export const DEMO_CURRENT_USER_STORAGE_KEY = "crm_demo_current_user_email";
 export const DEMO_STATE_UPDATED_EVENT = "crm-demo-state-updated";
@@ -426,11 +427,14 @@ function handleSettingsPatch(state: DemoState, commit: CommitFn, body: unknown) 
   if (!commit) return jsonResponse({ error: "Demo state is not ready." }, 503);
   const payload = asRecord(body);
   const settings = { ...state.settings };
+  const shouldStoreLanguagePreference = payload.persist_language_preference === true;
   for (const [key, value] of Object.entries(payload)) {
     if (key in settings) {
       (settings as Record<string, unknown>)[key] = value;
     }
   }
+  const uiLanguage = normalizeDemoLanguage(settings.ui_language as string | undefined);
+  if (shouldStoreLanguagePreference && uiLanguage) writeDemoLanguagePreference(uiLanguage);
   commit({ ...state, settings });
   return jsonResponse(settings);
 }

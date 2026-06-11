@@ -372,6 +372,9 @@ const en = {
   demo_notice_body:
     "This public demo showcases the workflow of a prospecting CRM. The contacts, companies, emails, appointments and displayed data are fictional. Actions are simulated and stored temporarily in your browser; no real emails are sent.",
   demo_notice_action: "I understand",
+  demo_language_switch_label: "Demo language",
+  demo_language_fr: "French",
+  demo_language_en: "English",
   demo_access_available: "Demo access available",
   demo_access_description: "Use the demo credentials to explore the CRM.",
   demo_view_credentials: "View credentials",
@@ -864,6 +867,9 @@ const fr: T = {
   demo_notice_body:
     "Cette démo publique présente le fonctionnement d’un CRM de prospection. Les contacts, entreprises, emails, rendez-vous et données affichés sont fictifs. Les actions sont simulées et stockées temporairement dans votre navigateur ; aucun email réel n’est envoyé.",
   demo_notice_action: "J’ai compris",
+  demo_language_switch_label: "Langue de la démo",
+  demo_language_fr: "Français",
+  demo_language_en: "Anglais",
   demo_access_available: "Accès démo disponible",
   demo_access_description: "Utilisez les identifiants démo pour explorer le CRM.",
   demo_view_credentials: "Voir les identifiants",

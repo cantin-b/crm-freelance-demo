@@ -405,7 +405,7 @@ export function SettingsForm({ initialSettings }: Props) {
       const res = await fetch("/api/settings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ui_language: uiLanguage }),
+        body: JSON.stringify({ ui_language: uiLanguage, persist_language_preference: true }),
       });
       if (!res.ok) throw new Error(t.settings_language_failed);
       setUiLanguageStatus({ type: "success", message: t.settings_ui_language_saved });
