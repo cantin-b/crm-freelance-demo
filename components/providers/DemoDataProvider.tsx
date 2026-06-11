@@ -20,6 +20,19 @@ const SYNCABLE_DEMO_FIELDS = [
 
 const PROSPECT_STATUSES = ["new", "contacted", "callback", "not_interested", "no_answer"];
 const HIGH_VALUE_STATUSES = ["proposal_sent", "client", "archived"];
+const SORTABLE_PROSPECT_FIELDS = ["updated_at", "created_at", "name", "city", "owner", "status"] as const;
+const STATUS_SORT_ORDER = [
+  "new",
+  "contacted",
+  "callback",
+  "no_answer",
+  "not_interested",
+  "proposal_sent",
+  "client",
+  "archived",
+];
+type ProspectSortKey = (typeof SORTABLE_PROSPECT_FIELDS)[number];
+type SortDirection = "asc" | "desc";
 const EXPORT_COLUMNS = [
   "id", "name", "category", "address", "postal_code", "city", "country",
   "phone", "email", "website", "gm_link", "rating", "reviews_count",
@@ -432,7 +445,8 @@ function listProspects(state: DemoState, url: URL, source: "prospects" | "client
       : PROSPECT_STATUSES.includes(prospect.status) && Boolean(prospect.list_name && visibleListNames.has(prospect.list_name)))
     .filter(prospect => matchesProspectFilters(prospect, url, source));
 
-  const sorted = sortProspects(base);
+  const { sortKey, sortDirection } = parseProspectSort(url);
+  const sorted = sortProspects(base, sortKey, sortDirection);
   const start = (page - 1) * limit;
   const pageRows = sorted.slice(start, start + limit);
   const categories = distinctSorted(state.prospects.map(prospect => prospect.category).filter(isPresentString));
@@ -480,10 +494,44 @@ function matchesProspectFilters(prospect: DemoProspect, url: URL, source: "prosp
   return true;
 }
 
-function sortProspects(rows: DemoProspect[]) {
+function parseProspectSort(url: URL): { sortKey: ProspectSortKey; sortDirection: SortDirection } {
+  const requestedSort = url.searchParams.get("sort");
+  const requestedDirection = url.searchParams.get("direction");
+  const sortKey = SORTABLE_PROSPECT_FIELDS.includes(requestedSort as ProspectSortKey)
+    ? requestedSort as ProspectSortKey
+    : "updated_at";
+  const sortDirection = requestedDirection === "asc" || requestedDirection === "desc"
+    ? requestedDirection
+    : "desc";
+  return { sortKey, sortDirection };
+}
+
+function compareNullableText(a: string | null, b: string | null) {
+  if (!a && !b) return 0;
+  if (!a) return 1;
+  if (!b) return -1;
+  return a.localeCompare(b, undefined, { sensitivity: "base" });
+}
+
+function compareStatus(a: string, b: string) {
+  const aIndex = STATUS_SORT_ORDER.indexOf(a);
+  const bIndex = STATUS_SORT_ORDER.indexOf(b);
+  return (aIndex === -1 ? STATUS_SORT_ORDER.length : aIndex) -
+    (bIndex === -1 ? STATUS_SORT_ORDER.length : bIndex);
+}
+
+function sortProspects(rows: DemoProspect[], sortKey: ProspectSortKey, sortDirection: SortDirection) {
   return [...rows].sort((a, b) => {
-    const dateDiff = new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
-    return dateDiff || b.id - a.id;
+    let diff = 0;
+    if (sortKey === "updated_at" || sortKey === "created_at") {
+      diff = new Date(a[sortKey]).getTime() - new Date(b[sortKey]).getTime();
+    } else if (sortKey === "status") {
+      diff = compareStatus(a.status, b.status);
+    } else {
+      diff = compareNullableText(a[sortKey], b[sortKey]);
+    }
+    const directionalDiff = sortDirection === "asc" ? diff : -diff;
+    return directionalDiff || new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime() || b.id - a.id;
   });
 }
 

@@ -133,6 +133,19 @@ const en = {
   filter_search_label: "Search",
   filter_sheet_description: "Filter the list by status, category, country and more.",
   x_selected_count: (n: number) => `${n} selected`,
+  sort_label: "Sort",
+  sort_last_updated_desc: "Last updated first",
+  sort_last_updated_asc: "Oldest update first",
+  sort_created_desc: "Newest leads first",
+  sort_created_asc: "Oldest leads first",
+  sort_name_asc: "Name A-Z",
+  sort_name_desc: "Name Z-A",
+  sort_city_asc: "City A-Z",
+  sort_city_desc: "City Z-A",
+  sort_owner_asc: "Owner A-Z",
+  sort_owner_desc: "Owner Z-A",
+  sort_status_pipeline: "Status pipeline",
+  sort_status_pipeline_reverse: "Status pipeline reverse",
 
   // Filter pill prefixes
   pill_status: "Status",
@@ -141,6 +154,7 @@ const en = {
   pill_email: "Email",
   pill_website: "Website",
   pill_list: "List",
+  pill_sort: "Sort",
 
   // ── ProspectDetail ────────────────────────────────────────────────────────────
   call: "Call",
@@ -607,6 +621,19 @@ const fr: T = {
   filter_search_label: "Recherche",
   filter_sheet_description: "Filtrer la liste par statut, catégorie, pays et plus.",
   x_selected_count: (n: number) => `${n} sélectionné${n > 1 ? "s" : ""}`,
+  sort_label: "Tri",
+  sort_last_updated_desc: "Dernière mise à jour d'abord",
+  sort_last_updated_asc: "Ancienne mise à jour d'abord",
+  sort_created_desc: "Nouveaux leads d'abord",
+  sort_created_asc: "Anciens leads d'abord",
+  sort_name_asc: "Nom A-Z",
+  sort_name_desc: "Nom Z-A",
+  sort_city_asc: "Ville A-Z",
+  sort_city_desc: "Ville Z-A",
+  sort_owner_asc: "Responsable A-Z",
+  sort_owner_desc: "Responsable Z-A",
+  sort_status_pipeline: "Pipeline de statut",
+  sort_status_pipeline_reverse: "Pipeline de statut inversé",
 
   pill_status: "Statut",
   pill_category: "Catégorie",
@@ -614,6 +641,7 @@ const fr: T = {
   pill_email: "Email",
   pill_website: "Site web",
   pill_list: "Liste",
+  pill_sort: "Tri",
 
   // ── ProspectDetail ────────────────────────────────────────────────────────────
   call: "Appeler",

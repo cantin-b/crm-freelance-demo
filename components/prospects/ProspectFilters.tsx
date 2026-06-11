@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Search, X, ChevronDown, SlidersHorizontal } from "lucide-react";
+import { ArrowUpDown, Check, Search, X, ChevronDown, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -28,6 +28,15 @@ export interface Filters {
   listName: string;
 }
 
+export type SortKey = "updated_at" | "created_at" | "name" | "city" | "owner" | "status";
+export type SortDirection = "asc" | "desc";
+
+export interface SortOption {
+  key: SortKey;
+  direction: SortDirection;
+  label: string;
+}
+
 export const INITIAL_FILTERS: Filters = {
   search: "",
   countries: [],
@@ -45,8 +54,14 @@ interface Props {
   categories: string[];
   listNames: string[];
   statusOptions: { value: string; label: string }[];
+  sortOptions: SortOption[];
+  sortKey: SortKey;
+  sortDirection: SortDirection;
+  defaultSortKey: SortKey;
+  defaultSortDirection: SortDirection;
   visibleFilters?: VisibleFilter[];
   onChange: (filters: Filters) => void;
+  onSortChange: (sortKey: SortKey, sortDirection: SortDirection) => void;
 }
 
 function MultiSelect({
@@ -238,6 +253,53 @@ function FilterPill({
   );
 }
 
+function SortSelect({
+  options,
+  sortKey,
+  sortDirection,
+  onChange,
+  triggerClassName,
+}: {
+  options: SortOption[];
+  sortKey: SortKey;
+  sortDirection: SortDirection;
+  onChange: (sortKey: SortKey, sortDirection: SortDirection) => void;
+  triggerClassName?: string;
+}) {
+  const current = options.find(option => option.key === sortKey && option.direction === sortDirection) ?? options[0];
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="outline"
+          size="sm"
+          className={cn("h-8 gap-1.5 font-normal", triggerClassName)}
+        >
+          <ArrowUpDown className="h-3.5 w-3.5 text-zinc-400" />
+          <span className="truncate">{current?.label}</span>
+          <ChevronDown className="h-3 w-3 shrink-0 text-zinc-400" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="w-56">
+        {options.map(option => {
+          const selected = option.key === sortKey && option.direction === sortDirection;
+          return (
+            <DropdownMenuItem
+              key={`${option.key}:${option.direction}`}
+              onSelect={() => onChange(option.key, option.direction)}
+              className="gap-2"
+            >
+              <Check className={cn("h-3.5 w-3.5", selected ? "opacity-100" : "opacity-0")} />
+              <span>{option.label}</span>
+            </DropdownMenuItem>
+          );
+        })}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 const DEFAULT_VISIBLE_FILTERS: VisibleFilter[] = ["status", "category", "country", "email", "website", "list"];
 
 export function ProspectFilters({
@@ -245,13 +307,22 @@ export function ProspectFilters({
   categories,
   listNames,
   statusOptions,
+  sortOptions,
+  sortKey,
+  sortDirection,
+  defaultSortKey,
+  defaultSortDirection,
   visibleFilters = DEFAULT_VISIBLE_FILTERS,
   onChange,
+  onSortChange,
 }: Props) {
   const searchRef = useRef<HTMLInputElement>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const t = useT();
   const isVisible = (filter: VisibleFilter) => visibleFilters.includes(filter);
+  const currentSortLabel =
+    sortOptions.find(option => option.key === sortKey && option.direction === sortDirection)?.label ?? sortOptions[0]?.label ?? "";
+  const hasCustomSort = sortKey !== defaultSortKey || sortDirection !== defaultSortDirection;
 
   // Auto-focus search on mount
   useEffect(() => {
@@ -315,6 +386,12 @@ export function ProspectFilters({
     pills.push({
       id: "list", prefix: t.pill_list, value: filters.listName,
       onRemove: () => update({ listName: "" }),
+    });
+  }
+  if (hasCustomSort) {
+    pills.push({
+      id: "sort", prefix: t.pill_sort, value: currentSortLabel,
+      onRemove: () => onSortChange(defaultSortKey, defaultSortDirection),
     });
   }
 
@@ -477,6 +554,17 @@ export function ProspectFilters({
                 </DropdownMenu>
               </div>
             )}
+
+            <div className="space-y-1.5">
+              <span className="text-xs font-medium text-zinc-500">{t.sort_label}</span>
+              <SortSelect
+                options={sortOptions}
+                sortKey={sortKey}
+                sortDirection={sortDirection}
+                onChange={onSortChange}
+                triggerClassName="w-full h-9 justify-between"
+              />
+            </div>
           </div>
 
           <div
@@ -599,6 +687,14 @@ export function ProspectFilters({
           </DropdownMenuContent>
         </DropdownMenu>
       )}
+
+      <SortSelect
+        options={sortOptions}
+        sortKey={sortKey}
+        sortDirection={sortDirection}
+        onChange={onSortChange}
+        triggerClassName="max-w-52"
+      />
 
       {/* Clear all */}
       {hasActiveFilters && (

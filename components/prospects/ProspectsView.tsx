@@ -5,7 +5,7 @@ import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { ProspectFilters, INITIAL_FILTERS } from "./ProspectFilters";
-import type { Filters, VisibleFilter } from "./ProspectFilters";
+import type { Filters, SortDirection, SortKey, SortOption, VisibleFilter } from "./ProspectFilters";
 import { ProspectTable } from "./ProspectTable";
 import { SendEmailModal } from "./SendEmailModal";
 import {
@@ -36,6 +36,8 @@ type ListViewSource = "prospects" | "clients";
 
 interface SavedListState {
   filters: Filters;
+  sortKey: SortKey;
+  sortDirection: SortDirection;
   page: number;
   pageSize: number;
   lastViewedProspectId: number | null;
@@ -45,6 +47,8 @@ interface SavedListState {
 }
 
 const DEFAULT_PAGE_SIZE = 50;
+const DEFAULT_SORT_KEY: SortKey = "updated_at";
+const DEFAULT_SORT_DIRECTION: SortDirection = "desc";
 const PROSPECTS_STATE_KEY = "crm_prospects_state";
 const CLIENTS_STATE_KEY = "crm_clients_state";
 const DETAIL_SOURCE_KEY = "crm_prospect_detail_source";
@@ -55,6 +59,8 @@ const CLIENT_VISIBLE_FILTERS: VisibleFilter[] = ["status", "category", "country"
 function createDefaultListState(): SavedListState {
   return {
     filters: INITIAL_FILTERS,
+    sortKey: DEFAULT_SORT_KEY,
+    sortDirection: DEFAULT_SORT_DIRECTION,
     page: 1,
     pageSize: DEFAULT_PAGE_SIZE,
     lastViewedProspectId: null,
@@ -78,6 +84,17 @@ function sanitizeNullableNumber(value: unknown): number | null {
 
 function sanitizePositiveNumber(value: unknown, fallback: number): number {
   return typeof value === "number" && Number.isFinite(value) && value > 0 ? value : fallback;
+}
+
+function sanitizeSortKey(value: unknown): SortKey {
+  return value === "updated_at" || value === "created_at" || value === "name" ||
+    value === "city" || value === "owner" || value === "status"
+    ? value
+    : DEFAULT_SORT_KEY;
+}
+
+function sanitizeSortDirection(value: unknown): SortDirection {
+  return value === "asc" || value === "desc" ? value : DEFAULT_SORT_DIRECTION;
 }
 
 function sanitizeFilters(value: unknown): Filters {
@@ -117,8 +134,8 @@ function getInitialPage(state: SavedListState): number {
   return state.page;
 }
 
-function buildFilterSignature(filters: Filters, search = filters.search): string {
-  return JSON.stringify({ ...filters, search });
+function buildListSignature(filters: Filters, sortKey: SortKey, sortDirection: SortDirection, search = filters.search): string {
+  return JSON.stringify({ filters: { ...filters, search }, sortKey, sortDirection });
 }
 
 function getViewStorageKey(source: ListViewSource): string {
@@ -140,6 +157,8 @@ function readListState(storageKey: string, source: ListViewSource): SavedListSta
       const pageSize = sanitizePositiveNumber(saved.pageSize, DEFAULT_PAGE_SIZE);
       return {
         filters: normalizeFiltersForSource(sanitizeFilters(saved.filters), source),
+        sortKey: sanitizeSortKey(saved.sortKey),
+        sortDirection: sanitizeSortDirection(saved.sortDirection),
         page: sanitizePositiveNumber(saved.page, 1),
         pageSize,
         lastViewedProspectId: sanitizeNullableNumber(saved.lastViewedProspectId),
@@ -162,6 +181,8 @@ function readListState(storageKey: string, source: ListViewSource): SavedListSta
         return {
           ...fallback,
           filters: sanitizeFilters(legacy.filters),
+          sortKey: DEFAULT_SORT_KEY,
+          sortDirection: DEFAULT_SORT_DIRECTION,
           pageSize: sanitizePositiveNumber(legacy.pageSize, DEFAULT_PAGE_SIZE),
         };
       }
@@ -177,6 +198,8 @@ function readListState(storageKey: string, source: ListViewSource): SavedListSta
         ...fallback.filters,
         statuses: ["new"],
       },
+      sortKey: "name",
+      sortDirection: "asc",
     };
   }
 
@@ -219,8 +242,39 @@ export function ProspectsView({
     .map(o => ({ ...o, label: t.status(o.value) }));
   const rowStatusOptions = (isClientsView ? STATUS_OPTIONS : PROSPECT_ROW_STATUS_OPTIONS)
     .map(o => ({ ...o, label: t.status(o.value) }));
+  const prospectSortOptions: SortOption[] = [
+    { key: "updated_at", direction: "desc", label: t.sort_last_updated_desc },
+    { key: "updated_at", direction: "asc", label: t.sort_last_updated_asc },
+    { key: "created_at", direction: "desc", label: t.sort_created_desc },
+    { key: "created_at", direction: "asc", label: t.sort_created_asc },
+    { key: "name", direction: "asc", label: t.sort_name_asc },
+    { key: "name", direction: "desc", label: t.sort_name_desc },
+    { key: "city", direction: "asc", label: t.sort_city_asc },
+    { key: "city", direction: "desc", label: t.sort_city_desc },
+    { key: "owner", direction: "asc", label: t.sort_owner_asc },
+    { key: "owner", direction: "desc", label: t.sort_owner_desc },
+    { key: "status", direction: "asc", label: t.sort_status_pipeline },
+    { key: "status", direction: "desc", label: t.sort_status_pipeline_reverse },
+  ];
+  const clientSortOptions: SortOption[] = [
+    { key: "updated_at", direction: "desc", label: t.sort_last_updated_desc },
+    { key: "updated_at", direction: "asc", label: t.sort_last_updated_asc },
+    { key: "status", direction: "asc", label: t.sort_status_pipeline },
+    { key: "status", direction: "desc", label: t.sort_status_pipeline_reverse },
+    { key: "owner", direction: "asc", label: t.sort_owner_asc },
+    { key: "owner", direction: "desc", label: t.sort_owner_desc },
+    { key: "name", direction: "asc", label: t.sort_name_asc },
+    { key: "name", direction: "desc", label: t.sort_name_desc },
+    { key: "city", direction: "asc", label: t.sort_city_asc },
+    { key: "city", direction: "desc", label: t.sort_city_desc },
+    { key: "created_at", direction: "desc", label: t.sort_created_desc },
+    { key: "created_at", direction: "asc", label: t.sort_created_asc },
+  ];
+  const sortOptions = isClientsView ? clientSortOptions : prospectSortOptions;
 
   const [filters, setFilters] = useState<Filters>(initialListState.filters);
+  const [sortKey, setSortKey] = useState<SortKey>(initialListState.sortKey);
+  const [sortDirection, setSortDirection] = useState<SortDirection>(initialListState.sortDirection);
   const [debouncedSearch, setDebouncedSearch] = useState(initialListState.filters.search);
   const [page, setPage] = useState(() => getInitialPage(initialListState));
   const [pageSize, setPageSize] = useState<number>(initialListState.pageSize);
@@ -234,7 +288,7 @@ export function ProspectsView({
     initialListState.pendingReturnProspectId ?? initialListState.lastViewedProspectId
   );
   const abortRef = useRef<AbortController | null>(null);
-  const filterSignatureRef = useRef(buildFilterSignature(initialListState.filters));
+  const listSignatureRef = useRef(buildListSignature(initialListState.filters, initialListState.sortKey, initialListState.sortDirection));
   const pendingReturnIdRef = useRef<number | null>(initialListState.pendingReturnProspectId);
   const pendingScrollIdRef = useRef<number | null>(initialListState.pendingReturnProspectId);
 
@@ -246,19 +300,21 @@ export function ProspectsView({
 
   // Reset page when filters change
   useEffect(() => {
-    const signature = buildFilterSignature(filters, debouncedSearch);
-    if (signature === filterSignatureRef.current) return;
-    filterSignatureRef.current = signature;
+    const signature = buildListSignature(filters, sortKey, sortDirection, debouncedSearch);
+    if (signature === listSignatureRef.current) return;
+    listSignatureRef.current = signature;
     pendingReturnIdRef.current = null;
     pendingScrollIdRef.current = null;
     setPage(1);
     setSelectedIds(new Set());
-  }, [filters, debouncedSearch]);
+  }, [filters, sortKey, sortDirection, debouncedSearch]);
 
   useEffect(() => {
     const nextFilters = normalizeFiltersForSource(filters, viewSource);
     writeListState(storageKey, {
       filters: nextFilters,
+      sortKey,
+      sortDirection,
       page,
       pageSize,
       lastViewedProspectId: highlightedId,
@@ -266,7 +322,7 @@ export function ProspectsView({
       navIds,
       updatedAt: Date.now(),
     });
-  }, [filters, page, pageSize, highlightedId, navIds, storageKey, viewSource]);
+  }, [filters, sortKey, sortDirection, page, pageSize, highlightedId, navIds, storageKey, viewSource]);
 
   const fetchData = useCallback(async () => {
     abortRef.current?.abort();
@@ -280,6 +336,8 @@ export function ProspectsView({
       if (filters.countries.length) params.set("country", filters.countries.join(","));
       if (filters.categories.length) params.set("category", filters.categories.join(","));
       if (filters.statuses.length) params.set("status", filters.statuses.join(","));
+      params.set("sort", sortKey);
+      params.set("direction", sortDirection);
       if (!isClientsView && filters.hasEmail !== "all") params.set("hasEmail", filters.hasEmail);
       if (!isClientsView && filters.hasWebsite !== "all") params.set("hasWebsite", filters.hasWebsite);
       if (!isClientsView && filters.listName) params.set("listName", filters.listName);
@@ -300,6 +358,7 @@ export function ProspectsView({
     }
   }, [filters.countries, filters.categories, filters.statuses,
       filters.hasEmail, filters.hasWebsite, filters.listName,
+      sortKey, sortDirection,
       debouncedSearch, page, pageSize, apiUrl, isClientsView]);
 
   useEffect(() => {
@@ -333,6 +392,8 @@ export function ProspectsView({
         pendingScrollIdRef.current = null;
         writeListState(storageKey, {
           filters: normalizeFiltersForSource(filters, viewSource),
+          sortKey,
+          sortDirection,
           page,
           pageSize,
           lastViewedProspectId: highlightedId,
@@ -356,6 +417,8 @@ export function ProspectsView({
     pendingScrollIdRef.current = null;
     writeListState(storageKey, {
       filters: normalizeFiltersForSource(filters, viewSource),
+      sortKey,
+      sortDirection,
       page,
       pageSize,
       lastViewedProspectId: pendingId,
@@ -363,7 +426,7 @@ export function ProspectsView({
       navIds: data.navIds,
       updatedAt: Date.now(),
     });
-  }, [data, filters, highlightedId, loading, navIds, page, pageSize, storageKey, viewSource]);
+  }, [data, filters, sortKey, sortDirection, highlightedId, loading, navIds, page, pageSize, storageKey, viewSource]);
 
   // ── Selection ────────────────────────────────────────────────────────────────
 
@@ -425,6 +488,14 @@ export function ProspectsView({
     setSelectedIds(new Set());
   }
 
+  function handleSortChange(nextSortKey: SortKey, nextSortDirection: SortDirection) {
+    pendingReturnIdRef.current = null;
+    pendingScrollIdRef.current = null;
+    setSortKey(nextSortKey);
+    setSortDirection(nextSortDirection);
+    setSelectedIds(new Set());
+  }
+
   function handleEmailClick(prospect: Prospect) {
     setEmailProspect(prospect);
   }
@@ -438,6 +509,8 @@ export function ProspectsView({
     localStorage.setItem(DETAIL_SOURCE_KEY, viewSource);
     writeListState(storageKey, {
       filters: nextFilters,
+      sortKey,
+      sortDirection,
       page,
       pageSize,
       lastViewedProspectId: id,
@@ -506,6 +579,8 @@ export function ProspectsView({
     if (filters.countries.length) params.set("country", filters.countries.join(","));
     if (filters.categories.length) params.set("category", filters.categories.join(","));
     if (filters.statuses.length) params.set("status", filters.statuses.join(","));
+    params.set("sort", sortKey);
+    params.set("direction", sortDirection);
     if (!isClientsView && filters.hasEmail !== "all") params.set("hasEmail", filters.hasEmail);
     if (!isClientsView && filters.hasWebsite !== "all") params.set("hasWebsite", filters.hasWebsite);
     if (!isClientsView && filters.listName) params.set("listName", filters.listName);
@@ -551,8 +626,14 @@ export function ProspectsView({
         categories={data?.categories ?? []}
         listNames={data?.listNames ?? []}
         statusOptions={filterStatusOptions}
+        sortOptions={sortOptions}
+        sortKey={sortKey}
+        sortDirection={sortDirection}
+        defaultSortKey={DEFAULT_SORT_KEY}
+        defaultSortDirection={DEFAULT_SORT_DIRECTION}
         visibleFilters={visibleFilters}
         onChange={f => { setFilters(normalizeFiltersForSource(f, viewSource)); }}
+        onSortChange={handleSortChange}
       />
 
       {/* Table */}
