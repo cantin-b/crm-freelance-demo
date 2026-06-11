@@ -15,6 +15,8 @@ const DEMO_ACCOUNT = {
   password: "userone",
 };
 
+const DEMO_NOTICE_STORAGE_KEY = "crm_demo_notice_seen";
+
 export function LoginForm() {
   const router = useRouter();
   const t = useT();
@@ -26,11 +28,24 @@ export function LoginForm() {
   const [forgotMessage, setForgotMessage] = useState<string | null>(null);
   const [forgotLoading, setForgotLoading] = useState(false);
   const [demoBannerVisible, setDemoBannerVisible] = useState(true);
+  const [demoNoticeVisible, setDemoNoticeVisible] = useState(false);
   const [credentialsOpen, setCredentialsOpen] = useState(false);
   const [copyFeedback, setCopyFeedback] = useState<{ key: string; status: "copied" | "manual" | "" }>({
     key: "",
     status: "",
   });
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      try {
+        setDemoNoticeVisible(localStorage.getItem(DEMO_NOTICE_STORAGE_KEY) !== "true");
+      } catch {
+        setDemoNoticeVisible(true);
+      }
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, []);
 
   useEffect(() => {
     if (!credentialsOpen) return;
@@ -111,6 +126,15 @@ export function LoginForm() {
     }
   }
 
+  function handleAcknowledgeDemoNotice() {
+    try {
+      localStorage.setItem(DEMO_NOTICE_STORAGE_KEY, "true");
+    } catch {
+      // The notice can still be dismissed for the current visit if storage is unavailable.
+    }
+    setDemoNoticeVisible(false);
+  }
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-4">
       <div className="w-full max-w-md rounded-xl bg-white p-8 shadow-md">
@@ -184,7 +208,28 @@ export function LoginForm() {
         </div>
       </div>
 
-      {demoBannerVisible && (
+      {demoNoticeVisible && (
+        <div className="fixed inset-x-3 bottom-3 z-30 mx-auto max-w-2xl sm:bottom-5">
+          <div className="flex flex-col gap-3 rounded-2xl border border-zinc-200/80 bg-white/95 p-4 shadow-[0_18px_48px_rgba(24,24,27,0.16)] ring-1 ring-white/80 backdrop-blur-xl sm:flex-row sm:items-center">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-navy text-white shadow-[0_8px_18px_rgba(24,24,27,0.2)]">
+              <Info className="h-4 w-4" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-zinc-950">{t.demo_notice_title}</p>
+              <p className="mt-1 text-xs leading-5 text-zinc-500">{t.demo_notice_body}</p>
+            </div>
+            <button
+              type="button"
+              onClick={handleAcknowledgeDemoNotice}
+              className="shrink-0 rounded-full bg-zinc-950 px-4 py-2 text-xs font-semibold text-white transition hover:bg-brand-navy focus:outline-none focus:ring-2 focus:ring-brand-navy/25"
+            >
+              {t.demo_notice_action}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {demoBannerVisible && !demoNoticeVisible && (
         <div className="fixed inset-x-3 bottom-3 z-30 mx-auto max-w-xl sm:bottom-5">
           <div className="flex items-center gap-3 rounded-2xl border border-zinc-200/80 bg-white/95 p-3 shadow-[0_18px_48px_rgba(24,24,27,0.16)] ring-1 ring-white/80 backdrop-blur-xl">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-navy text-white shadow-[0_8px_18px_rgba(24,24,27,0.2)]">

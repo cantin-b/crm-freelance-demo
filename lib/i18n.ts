@@ -368,6 +368,10 @@ const en = {
   login_email_not_configured: "Email not configured. Please set up Gmail in Settings first.",
   login_forgot_password: "Forgot password?",
   login_sending: "Sending…",
+  demo_notice_title: "Demo version",
+  demo_notice_body:
+    "This public demo showcases the workflow of a prospecting CRM. The contacts, companies, emails, appointments and displayed data are fictional. Actions are simulated and stored temporarily in your browser; no real emails are sent.",
+  demo_notice_action: "I understand",
   demo_access_available: "Demo access available",
   demo_access_description: "Use the demo credentials to explore the CRM.",
   demo_view_credentials: "View credentials",
@@ -856,6 +860,10 @@ const fr: T = {
   login_email_not_configured: "Email non configuré. Veuillez configurer Gmail dans les paramètres d'abord.",
   login_forgot_password: "Mot de passe oublié ?",
   login_sending: "Envoi…",
+  demo_notice_title: "Version de démonstration",
+  demo_notice_body:
+    "Cette démo publique présente le fonctionnement d’un CRM de prospection. Les contacts, entreprises, emails, rendez-vous et données affichés sont fictifs. Les actions sont simulées et stockées temporairement dans votre navigateur ; aucun email réel n’est envoyé.",
+  demo_notice_action: "J’ai compris",
   demo_access_available: "Accès démo disponible",
   demo_access_description: "Utilisez les identifiants démo pour explorer le CRM.",
   demo_view_credentials: "Voir les identifiants",
