@@ -838,11 +838,38 @@ function listListsWithCounts(state: DemoState) {
 function handleListPatch(state: DemoState, commit: CommitFn, listId: number, body: unknown) {
   if (!commit) return jsonResponse({ error: "Demo state is not ready." }, 503);
   const payload = asRecord(body);
-  if (typeof payload.is_visible !== "boolean") return jsonResponse({ error: "is_visible is required." }, 400);
   const list = state.lists.find(item => item.id === listId);
   if (!list) return jsonResponse({ error: "List not found." }, 404);
-  const updated = { ...list, is_visible: payload.is_visible };
-  commit({ ...state, lists: state.lists.map(item => item.id === listId ? updated : item) });
+
+  let nextName = list.name;
+  if ("name" in payload) {
+    if (typeof payload.name !== "string") return jsonResponse({ error: "List name must be a string." }, 400);
+    nextName = payload.name.trim();
+    if (!nextName) return jsonResponse({ error: "List name is required." }, 400);
+    const duplicate = state.lists.some(
+      item => item.id !== listId && item.name.trim().toLowerCase() === nextName.toLowerCase()
+    );
+    if (duplicate) return jsonResponse({ error: "A list with this name already exists." }, 409);
+  }
+
+  let nextVisibility = list.is_visible;
+  if ("is_visible" in payload) {
+    if (typeof payload.is_visible !== "boolean") return jsonResponse({ error: "is_visible must be a boolean." }, 400);
+    nextVisibility = payload.is_visible;
+  }
+
+  if (!("name" in payload) && !("is_visible" in payload)) {
+    return jsonResponse({ error: "No supported list fields provided." }, 400);
+  }
+
+  const updated = { ...list, name: nextName, is_visible: nextVisibility };
+  commit({
+    ...state,
+    lists: state.lists.map(item => item.id === listId ? updated : item),
+    prospects: state.prospects.map(prospect => (
+      prospect.list_name === list.name ? { ...prospect, list_name: nextName } : prospect
+    )),
+  });
   return jsonResponse(updated);
 }
 

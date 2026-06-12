@@ -42,6 +42,12 @@ export type DemoCredential = {
   password: string;
 };
 
+const DEMO_LIST_NAME_BY_COUNTRY: Record<string, string> = {
+  BE: "Peintres bâtiment BE",
+  FR: "Peintres bâtiment FR",
+  CH: "Peintres bâtiment CH",
+};
+
 export type DemoState = {
   prospects: DemoProspect[];
   appointments: DemoAppointment[];
@@ -3053,9 +3059,21 @@ const DEMO_TEMPLATES: DemoEmailTemplate[] = [
 const DEMO_LISTS: DemoList[] = [
   {
     id: 1,
-    name: "Démo peintres BE-FR-CH",
+    name: DEMO_LIST_NAME_BY_COUNTRY.BE,
     is_visible: true,
-    created_at: "2026-06-10T08:00:00.000Z",
+    created_at: "2026-06-05T08:00:00.000Z",
+  },
+  {
+    id: 2,
+    name: DEMO_LIST_NAME_BY_COUNTRY.FR,
+    is_visible: true,
+    created_at: "2026-06-06T08:00:00.000Z",
+  },
+  {
+    id: 3,
+    name: DEMO_LIST_NAME_BY_COUNTRY.CH,
+    is_visible: true,
+    created_at: "2026-06-07T08:00:00.000Z",
   },
 ];
 
@@ -3094,8 +3112,13 @@ function cloneDemoValue<T>(value: T): T {
 }
 
 export function createDemoSeedData(): DemoState {
+  const prospects = cloneDemoValue(DEMO_PROSPECTS).map(prospect => ({
+    ...prospect,
+    list_name: DEMO_LIST_NAME_BY_COUNTRY[prospect.country ?? ""] ?? prospect.list_name,
+  }));
+
   return {
-    prospects: cloneDemoValue(DEMO_PROSPECTS),
+    prospects,
     appointments: cloneDemoValue(DEMO_APPOINTMENTS),
     documents: [],
     lists: cloneDemoValue(DEMO_LISTS),
