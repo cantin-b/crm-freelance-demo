@@ -98,11 +98,51 @@ export const STATUS_COLORS: Record<Status, string> = {
   archived: "bg-zinc-100 text-zinc-400 ring-1 ring-inset ring-zinc-400/15",
 };
 
-export const COUNTRY_OPTIONS = [
-  { value: "CH", label: "Switzerland" },
-  { value: "FR", label: "France" },
-  { value: "BE", label: "Belgium" },
-  { value: "LU", label: "Luxembourg" },
+export type CountryRegion = "europe" | "asia" | "north_america" | "oceania";
+
+export const COUNTRY_REGION_ORDER: CountryRegion[] = ["europe", "asia", "north_america", "oceania"];
+
+export const COUNTRY_OPTIONS: { value: string; label: string; region: CountryRegion }[] = [
+  { value: "AT", label: "Austria", region: "europe" },
+  { value: "BE", label: "Belgium", region: "europe" },
+  { value: "BG", label: "Bulgaria", region: "europe" },
+  { value: "HR", label: "Croatia", region: "europe" },
+  { value: "CY", label: "Cyprus", region: "europe" },
+  { value: "CZ", label: "Czechia", region: "europe" },
+  { value: "DK", label: "Denmark", region: "europe" },
+  { value: "EE", label: "Estonia", region: "europe" },
+  { value: "FI", label: "Finland", region: "europe" },
+  { value: "FR", label: "France", region: "europe" },
+  { value: "DE", label: "Germany", region: "europe" },
+  { value: "GR", label: "Greece", region: "europe" },
+  { value: "HU", label: "Hungary", region: "europe" },
+  { value: "IE", label: "Ireland", region: "europe" },
+  { value: "IT", label: "Italy", region: "europe" },
+  { value: "LV", label: "Latvia", region: "europe" },
+  { value: "LT", label: "Lithuania", region: "europe" },
+  { value: "LU", label: "Luxembourg", region: "europe" },
+  { value: "MT", label: "Malta", region: "europe" },
+  { value: "NL", label: "Netherlands", region: "europe" },
+  { value: "NO", label: "Norway", region: "europe" },
+  { value: "PL", label: "Poland", region: "europe" },
+  { value: "PT", label: "Portugal", region: "europe" },
+  { value: "RO", label: "Romania", region: "europe" },
+  { value: "SK", label: "Slovakia", region: "europe" },
+  { value: "SI", label: "Slovenia", region: "europe" },
+  { value: "ES", label: "Spain", region: "europe" },
+  { value: "SE", label: "Sweden", region: "europe" },
+  { value: "CH", label: "Switzerland", region: "europe" },
+  { value: "GB", label: "United Kingdom", region: "europe" },
+  { value: "CN", label: "China", region: "asia" },
+  { value: "JP", label: "Japan", region: "asia" },
+  { value: "SG", label: "Singapore", region: "asia" },
+  { value: "KR", label: "South Korea", region: "asia" },
+  { value: "TW", label: "Taiwan", region: "asia" },
+  { value: "TH", label: "Thailand", region: "asia" },
+  { value: "CA", label: "Canada", region: "north_america" },
+  { value: "US", label: "United States", region: "north_america" },
+  { value: "AU", label: "Australia", region: "oceania" },
+  { value: "NZ", label: "New Zealand", region: "oceania" },
 ];
 
 export const CSV_COLUMNS = [

@@ -25,10 +25,10 @@ import { SendEmailModal } from "./SendEmailModal";
 import { DocumentsSection } from "./DocumentsSection";
 import { AppointmentsSection } from "./AppointmentsSection";
 import {
-  COUNTRY_OPTIONS,
   getAllowedStatusOptions,
   isHighValueStatus,
 } from "@/lib/constants";
+import { CountrySelectItems } from "@/components/shared/CountrySelectItems";
 import { useT } from "@/components/providers/UiLanguageProvider";
 import { cn } from "@/lib/utils";
 import type { Prospect, Document as ProspectDocument, Appointment } from "@/types";
@@ -36,6 +36,7 @@ import type { Prospect, Document as ProspectDocument, Appointment } from "@/type
 const DOCUMENT_STATUSES = ["proposal_sent", "client", "archived"];
 const APPOINTMENT_STATUSES = ["proposal_sent", "client"];
 const SCROLL_TOP_THRESHOLD = 360;
+const COUNTRY_SELECT_CONTENT_CLASS = "max-h-80 w-[var(--radix-select-trigger-width)] overflow-y-auto";
 const PROSPECTS_STATE_KEY = "crm_prospects_state";
 const CLIENTS_STATE_KEY = "crm_clients_state";
 const DETAIL_SOURCE_KEY = "crm_prospect_detail_source";
@@ -698,11 +699,9 @@ export function ProspectDetail({ prospect: initial, source }: { prospect: Prospe
                 <Select value={data.country ?? "__none"}
                   onValueChange={v => update("country", v === "__none" ? null : v)}>
                   <SelectTrigger className="h-9 text-sm"><SelectValue placeholder={t.select_country_placeholder} /></SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className={COUNTRY_SELECT_CONTENT_CLASS}>
                     <SelectItem value="__none">—</SelectItem>
-                    {COUNTRY_OPTIONS.map(o => (
-                      <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-                    ))}
+                    <CountrySelectItems />
                   </SelectContent>
                 </Select>
               </MobileField>
@@ -1005,11 +1004,9 @@ export function ProspectDetail({ prospect: initial, source }: { prospect: Prospe
                   <SelectTrigger className="h-8 text-sm">
                     <SelectValue placeholder="Select country" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className={COUNTRY_SELECT_CONTENT_CLASS}>
                     <SelectItem value="__none">—</SelectItem>
-                    {COUNTRY_OPTIONS.map(o => (
-                      <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-                    ))}
+                    <CountrySelectItems />
                   </SelectContent>
                 </Select>
               </Field>

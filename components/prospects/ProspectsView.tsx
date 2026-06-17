@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Download } from "lucide-react";
+import Link from "next/link";
+import { Download, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { ProspectFilters, INITIAL_FILTERS } from "./ProspectFilters";
@@ -24,6 +25,7 @@ interface ApiResponse {
   totalPages: number;
   navIds: number[];
   categories: string[];
+  countries: string[];
   listNames: string[];
 }
 
@@ -607,10 +609,20 @@ export function ProspectsView({
         title={resolvedTitle}
         description={data ? t.total_count(data.total) : " "}
         actions={
-          <Button variant="outline" size="sm" onClick={handleExportAll} className="gap-1.5">
-            <Download className="w-3.5 h-3.5" />
-            {t.export_view}
-          </Button>
+          <>
+            {isClientsView && (
+              <Button asChild size="sm" className="gap-1.5">
+                <Link href="/clients/new">
+                  <Plus className="w-3.5 h-3.5" />
+                  {t.new_client}
+                </Link>
+              </Button>
+            )}
+            <Button variant="outline" size="sm" onClick={handleExportAll} className="gap-1.5">
+              <Download className="w-3.5 h-3.5" />
+              {t.export_view}
+            </Button>
+          </>
         }
       />
 
@@ -624,6 +636,7 @@ export function ProspectsView({
       <ProspectFilters
         filters={filters}
         categories={data?.categories ?? []}
+        countries={data?.countries ?? []}
         listNames={data?.listNames ?? []}
         statusOptions={filterStatusOptions}
         sortOptions={sortOptions}

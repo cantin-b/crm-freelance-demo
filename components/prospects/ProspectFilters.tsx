@@ -13,7 +13,7 @@ import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
   SheetTrigger, SheetClose,
 } from "@/components/ui/sheet";
-import { COUNTRY_OPTIONS } from "@/lib/constants";
+import { COUNTRY_OPTIONS, COUNTRY_REGION_ORDER } from "@/lib/constants";
 import { groupRawCategories, type GroupedProspectCategories } from "@/lib/prospectCategories";
 import { cn } from "@/lib/utils";
 import { useT } from "@/components/providers/UiLanguageProvider";
@@ -37,6 +37,12 @@ export interface SortOption {
   label: string;
 }
 
+type GroupedCountryOptions = {
+  groupKey: string;
+  groupLabel: string;
+  countries: { value: string; label: string }[];
+};
+
 export const INITIAL_FILTERS: Filters = {
   search: "",
   countries: [],
@@ -52,6 +58,7 @@ export type VisibleFilter = "status" | "category" | "country" | "email" | "websi
 interface Props {
   filters: Filters;
   categories: string[];
+  countries: string[];
   listNames: string[];
   statusOptions: { value: string; label: string }[];
   sortOptions: SortOption[];
@@ -187,6 +194,68 @@ function GroupedCategorySelect({
   );
 }
 
+function GroupedCountrySelect({
+  label,
+  groups,
+  value,
+  onChange,
+  resetLabel,
+  triggerClassName,
+}: {
+  label: string;
+  groups: GroupedCountryOptions[];
+  value: string[];
+  onChange: (v: string[]) => void;
+  resetLabel: string;
+  triggerClassName?: string;
+}) {
+  const active = value.length > 0;
+  const toggle = (v: string, checked: boolean) =>
+    onChange(checked ? [...value, v] : value.filter(x => x !== v));
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="outline"
+          size="sm"
+          className={cn("h-8 gap-1 font-normal", active && "border-brand-navy/25 bg-brand-navy/5 text-zinc-950", triggerClassName)}
+        >
+          {label}
+          <ChevronDown className="h-3 w-3 shrink-0 text-zinc-400" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="w-72 max-h-80 overflow-y-auto">
+        <DropdownMenuItem
+          onSelect={() => onChange([])}
+          className={!active ? "font-medium" : ""}
+        >
+          {resetLabel}
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        {groups.map((group, groupIndex) => (
+          <div key={group.groupKey}>
+            {groupIndex > 0 && <DropdownMenuSeparator />}
+            <DropdownMenuLabel className="px-2 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-wide text-zinc-400">
+              {group.groupLabel}
+            </DropdownMenuLabel>
+            {group.countries.map(country => (
+              <DropdownMenuCheckboxItem
+                key={country.value}
+                checked={value.includes(country.value)}
+                onCheckedChange={checked => toggle(country.value, !!checked)}
+                className="items-start gap-2 py-2"
+              >
+                <span className="truncate">{country.label}</span>
+              </DropdownMenuCheckboxItem>
+            ))}
+          </div>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 function ToggleFilter({
   label,
   hasLabel,
@@ -305,6 +374,7 @@ const DEFAULT_VISIBLE_FILTERS: VisibleFilter[] = ["status", "category", "country
 export function ProspectFilters({
   filters,
   categories,
+  countries,
   listNames,
   statusOptions,
   sortOptions,
@@ -340,7 +410,16 @@ export function ProspectFilters({
     (isVisible("website") && filters.hasWebsite !== "all") ||
     (isVisible("list") && !!filters.listName);
 
-  const countryOptions = COUNTRY_OPTIONS.map(o => ({ value: o.value, label: t.country(o.value) }));
+  const countryGroups = COUNTRY_REGION_ORDER.map(region => ({
+    groupKey: region,
+    groupLabel: t.country_region(region),
+    countries: COUNTRY_OPTIONS
+      .filter(country => countries.includes(country.value))
+      .filter(country => country.region === region)
+      .map(country => ({ value: country.value, label: t.country(country.value) }))
+      .sort((a, b) => a.label.localeCompare(b.label, undefined, { sensitivity: "base" })),
+  })).filter(group => group.countries.length > 0);
+  const countryOptions = countryGroups.flatMap(group => group.countries);
 
   const groupedCategoryOptions = groupRawCategories(categories, t.ui_language);
   const categoryOptions = groupedCategoryOptions.flatMap(group =>
@@ -349,7 +428,7 @@ export function ProspectFilters({
   const listNameOptions = listNames.map(l => ({ value: l, label: l }));
 
   const statusLabel = (v: string) => statusOptions.find(o => o.value === v)?.label ?? v;
-  const countryLabel = (v: string) => countryOptions.find(o => o.value === v)?.label ?? v;
+  const countryLabel = (v: string) => countryOptions.find(o => o.value === v)?.label ?? t.country(v);
   const categoryLabel = (v: string) => categoryOptions.find(o => o.value === v)?.label ?? v;
 
   // Active filters represented as individually-removable pills (search excluded —
@@ -478,11 +557,12 @@ export function ProspectFilters({
             {isVisible("country") && (
               <div className="space-y-1.5">
                 <span className="text-xs font-medium text-zinc-500">{t.filter_country}</span>
-                <MultiSelect
+                <GroupedCountrySelect
                   label={filters.countries.length ? t.x_selected_count(filters.countries.length) : t.filter_any_country}
-                  options={countryOptions}
+                  groups={countryGroups}
                   value={filters.countries}
                   onChange={countries => update({ countries })}
+                  resetLabel={t.filter_any_country}
                   triggerClassName="w-full h-9 justify-between"
                 />
               </div>
@@ -624,11 +704,12 @@ export function ProspectFilters({
 
       {/* Country */}
       {isVisible("country") && (
-        <MultiSelect
+        <GroupedCountrySelect
           label={t.filter_country}
-          options={countryOptions}
+          groups={countryGroups}
           value={filters.countries}
           onChange={countries => update({ countries })}
+          resetLabel={t.filter_any_country}
         />
       )}
 

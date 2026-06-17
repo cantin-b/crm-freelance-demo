@@ -21,6 +21,7 @@ const SYNCABLE_DEMO_FIELDS = [
 
 const PROSPECT_STATUSES = ["new", "contacted", "callback", "not_interested", "no_answer"];
 const HIGH_VALUE_STATUSES = ["proposal_sent", "client", "archived"];
+const MANUAL_CONTACT_LIST_NAME = "Ajout contact";
 const SORTABLE_PROSPECT_FIELDS = ["updated_at", "created_at", "name", "city", "owner", "status"] as const;
 const STATUS_SORT_ORDER = [
   "new",
@@ -304,7 +305,10 @@ async function handleDemoRequest({
     if (method === "PATCH") return handleBulkProspectStatus(state, commit, body);
     if (method === "DELETE") return handleBulkProspectDelete(state, commit, body);
   }
-  if (path === "/api/clients" && method === "GET") return jsonResponse(listProspects(state, url, "clients"));
+  if (path === "/api/clients") {
+    if (method === "GET") return jsonResponse(listProspects(state, url, "clients"));
+    if (method === "POST") return handleClientCreate(state, commit, body);
+  }
 
   const prospectAppointmentMatch = /^\/api\/prospects\/(\d+)\/appointments$/.exec(path);
   if (prospectAppointmentMatch) {
@@ -443,18 +447,18 @@ function listProspects(state: DemoState, url: URL, source: "prospects" | "client
   const page = Math.max(1, Number(url.searchParams.get("page") || 1));
   const limit = Math.min(200, Math.max(1, Number(url.searchParams.get("limit") || 50)));
   const visibleListNames = new Set(state.lists.filter(list => list.is_visible).map(list => list.name));
-  const base = state.prospects
-    .filter(prospect => source === "clients"
-      ? HIGH_VALUE_STATUSES.includes(prospect.status)
-      : PROSPECT_STATUSES.includes(prospect.status) && Boolean(prospect.list_name && visibleListNames.has(prospect.list_name)))
-    .filter(prospect => matchesProspectFilters(prospect, url, source));
+  const sourceRows = state.prospects.filter(prospect => source === "clients"
+    ? HIGH_VALUE_STATUSES.includes(prospect.status)
+    : PROSPECT_STATUSES.includes(prospect.status) && Boolean(prospect.list_name && visibleListNames.has(prospect.list_name)));
+  const base = sourceRows.filter(prospect => matchesProspectFilters(prospect, url, source));
 
   const { sortKey, sortDirection } = parseProspectSort(url);
   const sorted = sortProspects(base, sortKey, sortDirection);
   const start = (page - 1) * limit;
   const pageRows = sorted.slice(start, start + limit);
   const categories = distinctSorted(state.prospects.map(prospect => prospect.category).filter(isPresentString));
-  const listNames = distinctSorted(state.prospects.map(prospect => prospect.list_name).filter(isPresentString));
+  const countries = distinctSorted(sourceRows.map(prospect => prospect.country).filter(isPresentString));
+  const listNames = distinctSorted(state.lists.map(list => list.name).filter(isPresentString));
 
   return {
     prospects: pageRows,
@@ -463,6 +467,7 @@ function listProspects(state: DemoState, url: URL, source: "prospects" | "client
     totalPages: Math.max(1, Math.ceil(sorted.length / limit)),
     navIds: sorted.map(prospect => prospect.id),
     categories,
+    countries,
     listNames,
   };
 }
@@ -602,6 +607,58 @@ function handleBulkProspectDelete(state: DemoState, commit: CommitFn, body: unkn
   if (!ids.length) return jsonResponse({ error: "ids are required." }, 400);
   commit(removeProspectIds(state, ids));
   return jsonResponse({ ok: true, deleted: ids.length });
+}
+
+function cleanOptionalString(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return trimmed || null;
+}
+
+function handleClientCreate(state: DemoState, commit: CommitFn, body: unknown) {
+  if (!commit) return jsonResponse({ error: "Demo state is not ready." }, 503);
+  const payload = asRecord(body);
+  const name = typeof payload.name === "string" ? payload.name.trim() : "";
+  const status = typeof payload.status === "string" ? payload.status : "";
+
+  if (!name) return jsonResponse({ error: "Client name is required." }, 400);
+  if (status !== "proposal_sent" && status !== "client") {
+    return jsonResponse({ error: "Initial status must be proposal_sent or client." }, 400);
+  }
+
+  const now = new Date().toISOString();
+  const id = nextId(state.prospects);
+  const client: DemoProspect = {
+    id,
+    uuid: `manual-client-${id}-${Date.now()}`,
+    name,
+    category: cleanOptionalString(payload.category),
+    address: cleanOptionalString(payload.address),
+    postal_code: cleanOptionalString(payload.postal_code),
+    city: cleanOptionalString(payload.city),
+    country: cleanOptionalString(payload.country),
+    phone: cleanOptionalString(payload.phone),
+    email: cleanOptionalString(payload.email),
+    website: cleanOptionalString(payload.website),
+    gm_link: null,
+    rating: null,
+    reviews_count: null,
+    opening_hours: null,
+    owner: cleanOptionalString(payload.owner),
+    facebook_url: null,
+    instagram_url: null,
+    linkedin_url: null,
+    status,
+    callback_at: null,
+    callback_note: null,
+    notes: cleanOptionalString(payload.notes),
+    list_name: MANUAL_CONTACT_LIST_NAME,
+    created_at: now,
+    updated_at: now,
+  };
+
+  commit({ ...state, prospects: [client, ...state.prospects] });
+  return jsonResponse(client, 201);
 }
 
 function removeProspectIds(state: DemoState, ids: number[]): DemoState {
