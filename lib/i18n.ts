@@ -23,6 +23,7 @@ const en = {
   page_callbacks: "Callbacks",
   page_appointments: "Appointments",
   page_calendar: "Calendar",
+  page_dashboard: "Dashboard",
   page_clients: "Clients",
   page_lists: "Lists",
   page_templates: "Templates",
@@ -31,6 +32,32 @@ const en = {
   // Mobile bottom nav (short labels)
   nav_mobile_appointments: "Appts",
   nav_mobile_calendar: "Cal",
+  nav_mobile_dashboard: "Dash",
+
+  // ── Dashboard ────────────────────────────────────────────────────────────────
+  dashboard_description: "Track demo outreach activity, pipeline movement and upcoming follow-ups.",
+  dashboard_calls_made: "Calls made",
+  dashboard_calls_caption: "Logged from phone actions in the CRM.",
+  dashboard_emails_sent: "Emails sent",
+  dashboard_emails_caption: "Simulated sends from the email workflow.",
+  dashboard_client_conversion: "Client conversion",
+  dashboard_conversion_caption: (converted: number, total: number) => `${converted.toLocaleString()} of ${total.toLocaleString()} leads converted`,
+  dashboard_active_opportunities: "Active opportunities",
+  dashboard_opportunities_caption: "Prospects with a proposal still open.",
+  dashboard_activity_title: "Outreach activity",
+  dashboard_activity_description: "Calls and emails across the demo prospecting window.",
+  dashboard_funnel_title: "Conversion funnel",
+  dashboard_funnel_step: (key: string) => ({
+    leads: "Leads",
+    contacted: "Contacted",
+    proposal_sent: "Proposal sent",
+    clients: "Clients",
+  }[key] ?? key),
+  dashboard_pipeline_title: "Pipeline by status",
+  dashboard_followups_title: "Upcoming follow-ups",
+  dashboard_no_followups: "No upcoming follow-ups.",
+  dashboard_appointment: "Appointment",
+  dashboard_callback: "Callback",
 
   // ── Status labels ─────────────────────────────────────────────────────────────
   // Use `t.status(value)` to get the translated label for a status value.
@@ -601,6 +628,7 @@ const fr: T = {
   page_callbacks: "Rappels",
   page_appointments: "Rendez-vous",
   page_calendar: "Calendrier",
+  page_dashboard: "Tableau de bord",
   page_clients: "Clients",
   page_lists: "Listes",
   page_templates: "Modèles",
@@ -608,6 +636,32 @@ const fr: T = {
 
   nav_mobile_appointments: "RDV",
   nav_mobile_calendar: "Cal",
+  nav_mobile_dashboard: "Bord",
+
+  // ── Dashboard ────────────────────────────────────────────────────────────────
+  dashboard_description: "Suivez l'activité de prospection démo, le pipeline et les prochains suivis.",
+  dashboard_calls_made: "Appels passés",
+  dashboard_calls_caption: "Comptabilisés depuis les actions téléphone du CRM.",
+  dashboard_emails_sent: "Emails envoyés",
+  dashboard_emails_caption: "Envois simulés depuis le workflow email.",
+  dashboard_client_conversion: "Conversion client",
+  dashboard_conversion_caption: (converted: number, total: number) => `${converted.toLocaleString()} sur ${total.toLocaleString()} leads convertis`,
+  dashboard_active_opportunities: "Opportunités actives",
+  dashboard_opportunities_caption: "Prospects avec un devis encore ouvert.",
+  dashboard_activity_title: "Activité de prospection",
+  dashboard_activity_description: "Appels et emails sur la fenêtre de prospection démo.",
+  dashboard_funnel_title: "Funnel de conversion",
+  dashboard_funnel_step: (key: string) => ({
+    leads: "Leads",
+    contacted: "Contactés",
+    proposal_sent: "Devis envoyés",
+    clients: "Clients",
+  }[key] ?? key),
+  dashboard_pipeline_title: "Pipeline par statut",
+  dashboard_followups_title: "Prochains suivis",
+  dashboard_no_followups: "Aucun suivi à venir.",
+  dashboard_appointment: "Rendez-vous",
+  dashboard_callback: "Rappel",
 
   // ── Status labels ─────────────────────────────────────────────────────────────
   status: (v: string): string => ({

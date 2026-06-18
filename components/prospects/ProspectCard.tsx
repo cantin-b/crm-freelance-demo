@@ -9,6 +9,7 @@ import {
 import { ProspectStatusBadge } from "./ProspectStatusBadge";
 import { getAllowedStatusValues, type Status } from "@/lib/constants";
 import { cn } from "@/lib/utils";
+import { recordDemoCall } from "@/lib/demoActivityClient";
 import type { Prospect } from "@/types";
 
 interface Props {
@@ -81,6 +82,7 @@ export function ProspectCard({
           {prospect.phone && (
             <a
               href={`tel:${prospect.phone}`}
+              onClick={() => recordDemoCall(prospect.id)}
               className="inline-flex items-center gap-1.5 rounded-md bg-zinc-50 px-2.5 py-1.5 text-xs font-medium text-brand-navy active:bg-zinc-100"
             >
               <Phone className="h-3.5 w-3.5 shrink-0" />

@@ -12,6 +12,7 @@ import { TableSectionHeader } from "@/components/ui/table-section-header";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { ProspectStatusBadge } from "@/components/prospects/ProspectStatusBadge";
 import { cn } from "@/lib/utils";
+import { recordDemoCall } from "@/lib/demoActivityClient";
 import type { Tone } from "@/lib/tones";
 import { useT } from "@/components/providers/UiLanguageProvider";
 import type { Prospect } from "@/types";
@@ -172,6 +173,7 @@ function CallbackRow({
         {p.phone ? (
           <a
             href={`tel:${p.phone}`}
+            onClick={() => recordDemoCall(p.id)}
             className="flex items-center gap-1.5 whitespace-nowrap text-sm font-medium text-brand-navy underline-offset-2 hover:text-brand-red hover:underline"
           >
             <Phone className="w-3.5 h-3.5 shrink-0" />
@@ -262,6 +264,7 @@ function CallbackCard({ prospect: p }: { prospect: CallbackProspect }) {
         {p.phone ? (
           <a
             href={`tel:${p.phone}`}
+            onClick={() => recordDemoCall(p.id)}
             className="inline-flex items-center gap-1.5 rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white active:bg-green-700"
           >
             <Phone className="h-3.5 w-3.5" /> {t.call_mobile}

@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  Users, PhoneCall, CheckCircle2, FolderOpen, Mail, Settings,
+  Users, PhoneCall, CheckCircle2, FolderOpen, Mail, Settings, LayoutDashboard,
   ChevronLeft, ChevronRight, CalendarClock, CalendarRange, LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -29,6 +29,7 @@ export function Sidebar() {
   const t = useT();
 
   const NAV_ITEMS = [
+    { href: "/dashboard",    label: t.page_dashboard,    icon: LayoutDashboard },
     { href: "/prospects",    label: t.page_prospects,    icon: Users },
     { href: "/callbacks",    label: t.page_callbacks,    icon: PhoneCall },
     { href: "/appointments", label: t.page_appointments, icon: CalendarClock },

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Users, PhoneCall, CheckCircle2, FolderOpen, Mail, CalendarDays, CalendarRange } from "lucide-react";
+import { Users, PhoneCall, CheckCircle2, Mail, CalendarDays, CalendarRange, LayoutDashboard } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useT } from "@/components/providers/UiLanguageProvider";
 
@@ -11,12 +11,12 @@ export function BottomNav() {
   const t = useT();
 
   const NAV_ITEMS = [
+    { href: "/dashboard",    label: t.nav_mobile_dashboard,       icon: LayoutDashboard },
     { href: "/prospects",    label: t.page_prospects,             icon: Users },
     { href: "/callbacks",    label: t.page_callbacks,             icon: PhoneCall },
     { href: "/appointments", label: t.nav_mobile_appointments,    icon: CalendarDays },
     { href: "/calendar",     label: t.nav_mobile_calendar,        icon: CalendarRange },
     { href: "/clients",      label: t.page_clients,               icon: CheckCircle2 },
-    { href: "/lists",        label: t.page_lists,                 icon: FolderOpen },
     { href: "/templates",    label: t.page_templates,             icon: Mail },
   ];
 

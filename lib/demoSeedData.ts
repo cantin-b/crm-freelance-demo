@@ -1,4 +1,4 @@
-import type { Appointment, Document, EmailTemplate, List, Prospect, Settings } from "@/types";
+import type { ActivityEvent, Appointment, Document, EmailTemplate, List, Prospect, Settings } from "@/types";
 
 export type DemoProspect = Omit<Prospect, "callback_at" | "created_at" | "updated_at"> & {
   callback_at: string | null;
@@ -7,6 +7,7 @@ export type DemoProspect = Omit<Prospect, "callback_at" | "created_at" | "update
 };
 
 export type DemoAppointment = Appointment;
+export type DemoActivityEvent = ActivityEvent;
 
 export type DemoAppointmentWithProspect = DemoAppointment & {
   prospect: {
@@ -51,6 +52,7 @@ const DEMO_LIST_NAME_BY_COUNTRY: Record<string, string> = {
 export type DemoState = {
   prospects: DemoProspect[];
   appointments: DemoAppointment[];
+  activityEvents: DemoActivityEvent[];
   documents: DemoDocument[];
   lists: DemoList[];
   templates: DemoEmailTemplate[];
@@ -67,6 +69,41 @@ export const DEMO_CREDENTIALS: DemoCredential[] = [
     email: "userone@mail.com",
     password: "userone",
   },
+];
+
+const DEMO_ACTIVITY_DATES = [
+  "2026-06-17T08:40:00.000Z",
+  "2026-06-17T10:15:00.000Z",
+  "2026-06-18T09:20:00.000Z",
+  "2026-06-18T13:35:00.000Z",
+  "2026-06-22T08:50:00.000Z",
+  "2026-06-23T11:10:00.000Z",
+  "2026-06-25T15:05:00.000Z",
+  "2026-06-26T09:45:00.000Z",
+  "2026-06-30T14:25:00.000Z",
+  "2026-07-01T08:35:00.000Z",
+  "2026-07-03T10:30:00.000Z",
+  "2026-07-06T13:50:00.000Z",
+  "2026-07-08T09:15:00.000Z",
+  "2026-07-10T16:20:00.000Z",
+  "2026-07-14T08:45:00.000Z",
+  "2026-07-15T11:35:00.000Z",
+  "2026-07-17T14:10:00.000Z",
+  "2026-07-21T09:55:00.000Z",
+  "2026-07-23T15:30:00.000Z",
+  "2026-07-27T10:05:00.000Z",
+  "2026-07-29T13:15:00.000Z",
+  "2026-07-31T16:00:00.000Z",
+  "2026-08-04T08:30:00.000Z",
+  "2026-08-06T11:45:00.000Z",
+  "2026-08-10T14:40:00.000Z",
+  "2026-08-12T09:25:00.000Z",
+  "2026-08-14T15:10:00.000Z",
+  "2026-08-18T10:50:00.000Z",
+  "2026-08-20T13:20:00.000Z",
+  "2026-08-24T09:05:00.000Z",
+  "2026-08-26T16:15:00.000Z",
+  "2026-08-28T11:30:00.000Z",
 ];
 
 const DEMO_PROSPECTS: DemoProspect[] = [
@@ -3111,6 +3148,19 @@ function cloneDemoValue<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
 }
 
+function createDemoActivityEvents(prospects: DemoProspect[]): DemoActivityEvent[] {
+  const contactableProspects = prospects.filter(prospect => prospect.phone || prospect.email);
+  return DEMO_ACTIVITY_DATES.map((created_at, index) => {
+    const prospect = contactableProspects[index % contactableProspects.length] ?? prospects[index % prospects.length];
+    return {
+      id: index + 1,
+      prospect_id: prospect.id,
+      type: index % 3 === 1 ? "email" : "call",
+      created_at,
+    };
+  });
+}
+
 export function createDemoSeedData(): DemoState {
   const prospects = cloneDemoValue(DEMO_PROSPECTS).map(prospect => ({
     ...prospect,
@@ -3120,6 +3170,7 @@ export function createDemoSeedData(): DemoState {
   return {
     prospects,
     appointments: cloneDemoValue(DEMO_APPOINTMENTS),
+    activityEvents: createDemoActivityEvents(prospects),
     documents: [],
     lists: cloneDemoValue(DEMO_LISTS),
     templates: cloneDemoValue(DEMO_TEMPLATES),

@@ -11,6 +11,7 @@ import { FilterPill } from "@/components/ui/filter-pill";
 import { TableSectionHeader } from "@/components/ui/table-section-header";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { cn } from "@/lib/utils";
+import { recordDemoCall } from "@/lib/demoActivityClient";
 import { APPOINTMENT_DURATIONS } from "@/lib/constants";
 import type { Tone } from "@/lib/tones";
 import { useT } from "@/components/providers/UiLanguageProvider";
@@ -208,7 +209,7 @@ function AppointmentRow({
         <div className="flex items-center justify-end gap-0.5">
           {prospect.phone && (
             <Button asChild size="sm" variant="ghost" className="h-7 w-7 p-0 text-zinc-400 hover:text-zinc-700">
-              <a href={`tel:${prospect.phone}`} title={prospect.phone}>
+              <a href={`tel:${prospect.phone}`} title={prospect.phone} onClick={() => recordDemoCall(prospect.id)}>
                 <Phone className="h-3.5 w-3.5" />
               </a>
             </Button>
@@ -286,6 +287,7 @@ function AppointmentMobileCard({
         {prospect.phone && (
           <a
             href={`tel:${prospect.phone}`}
+            onClick={() => recordDemoCall(prospect.id)}
             className="inline-flex items-center gap-1.5 rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white active:bg-green-700"
           >
             <Phone className="h-3.5 w-3.5" /> Appeler

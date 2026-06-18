@@ -31,6 +31,7 @@ import {
 import { CountrySelectItems } from "@/components/shared/CountrySelectItems";
 import { useT } from "@/components/providers/UiLanguageProvider";
 import { cn } from "@/lib/utils";
+import { recordDemoCall } from "@/lib/demoActivityClient";
 import type { Prospect, Document as ProspectDocument, Appointment } from "@/types";
 
 const DOCUMENT_STATUSES = ["proposal_sent", "client", "archived"];
@@ -510,6 +511,7 @@ export function ProspectDetail({ prospect: initial, source }: { prospect: Prospe
               {data.phone && (
                 <a
                   href={`tel:${data.phone}`}
+                  onClick={() => recordDemoCall(data.id)}
                   aria-label={t.call}
                   title={t.call}
                   className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-600 shadow-control transition-colors active:bg-zinc-50"
@@ -612,7 +614,7 @@ export function ProspectDetail({ prospect: initial, source }: { prospect: Prospe
           <div className="flex shrink-0 items-center gap-1.5">
             {data.phone && (
               <Button asChild variant="outline" size="sm" className="gap-1.5">
-                <a href={`tel:${data.phone}`}>
+                <a href={`tel:${data.phone}`} onClick={() => recordDemoCall(data.id)}>
                   <Phone className="h-3.5 w-3.5" /> {t.call}
                 </a>
               </Button>

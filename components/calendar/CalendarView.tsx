@@ -11,6 +11,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { recordDemoCall } from "@/lib/demoActivityClient";
 import {
   getMonthGrid, getWeekDays, isSameMonth, isToday,
   getEventsForDay, getEventPosition, formatTime, formatMonthLabel,
@@ -439,7 +440,7 @@ export function CalendarView() {
               <div className="flex items-center gap-2 border-t border-zinc-100 pt-4">
                 {meta.phone && (
                   <Button asChild variant="outline" size="sm" className="h-8 gap-1.5">
-                    <a href={`tel:${meta.phone}`}>
+                    <a href={`tel:${meta.phone}`} onClick={() => recordDemoCall(meta.prospectId)}>
                       <Phone className="h-3.5 w-3.5" /> Call
                     </a>
                   </Button>

@@ -34,6 +34,15 @@ export type AppointmentWithProspect = Appointment & {
   };
 };
 
+export type ActivityEventType = "call" | "email";
+
+export interface ActivityEvent {
+  id: number;
+  prospect_id: number;
+  type: ActivityEventType;
+  created_at: string;
+}
+
 export interface Prospect {
   id: number;
   uuid: string;

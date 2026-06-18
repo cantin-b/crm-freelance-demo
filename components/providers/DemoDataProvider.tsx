@@ -2,7 +2,7 @@
 
 import { useEffect, useInsertionEffect, useRef, useState } from "react";
 import type { MutableRefObject, ReactNode } from "react";
-import { createDemoSeedData, type DemoAppointment, type DemoDocument, type DemoProspect, type DemoState } from "@/lib/demoSeedData";
+import { createDemoSeedData, type DemoActivityEvent, type DemoAppointment, type DemoDocument, type DemoProspect, type DemoState } from "@/lib/demoSeedData";
 import { isAllowedStatusTransition } from "@/lib/constants";
 import { normalizeDemoLanguage, writeDemoLanguagePreference } from "@/lib/demoLanguage";
 
@@ -13,6 +13,7 @@ const DEMO_STATE_CHANNEL = "crm-freelance-demo-state";
 const SYNCABLE_DEMO_FIELDS = [
   "prospects",
   "appointments",
+  "activityEvents",
   "documents",
   "lists",
   "templates",
@@ -341,6 +342,8 @@ async function handleDemoRequest({
   }
 
   if (path === "/api/calendar" && method === "GET") return jsonResponse({ events: buildCalendarEvents(state) });
+  if (path === "/api/dashboard" && method === "GET") return jsonResponse(buildDashboardData(state));
+  if (path === "/api/activity" && method === "POST") return handleActivityCreate(state, commit, body);
 
   if (path === "/api/lists") {
     if (method === "GET") return jsonResponse(listListsWithCounts(state));
@@ -667,6 +670,7 @@ function removeProspectIds(state: DemoState, ids: number[]): DemoState {
     ...state,
     prospects: state.prospects.filter(prospect => !idSet.has(prospect.id)),
     appointments: state.appointments.filter(appt => !idSet.has(appt.prospect_id)),
+    activityEvents: state.activityEvents.filter(event => !idSet.has(event.prospect_id)),
     documents: state.documents.filter(doc => !idSet.has(doc.prospect_id)),
   };
 }
@@ -824,6 +828,126 @@ function buildCalendarEvents(state: DemoState) {
     });
 
   return [...appointmentEvents, ...callbackEvents];
+}
+
+function buildDashboardData(state: DemoState) {
+  const statusCounts = STATUS_SORT_ORDER.reduce<Record<string, number>>((acc, status) => {
+    acc[status] = 0;
+    return acc;
+  }, {});
+  for (const prospect of state.prospects) {
+    statusCounts[prospect.status] = (statusCounts[prospect.status] ?? 0) + 1;
+  }
+
+  const totalProspects = state.prospects.length;
+  const convertedClients = (statusCounts.client ?? 0) + (statusCounts.archived ?? 0);
+  const proposalPipeline = (statusCounts.proposal_sent ?? 0) + convertedClients;
+  const contactedProspects = totalProspects - (statusCounts.new ?? 0);
+  const callsMade = state.activityEvents.filter(event => event.type === "call").length;
+  const emailsSent = state.activityEvents.filter(event => event.type === "email").length;
+  const conversionRate = totalProspects ? Math.round((convertedClients / totalProspects) * 100) : 0;
+
+  return {
+    summary: {
+      callsMade,
+      emailsSent,
+      conversionRate,
+      activeOpportunities: statusCounts.proposal_sent ?? 0,
+      totalProspects,
+      convertedClients,
+    },
+    activitySeries: buildActivitySeries(state.activityEvents),
+    funnel: [
+      { key: "leads", count: totalProspects, rate: 100 },
+      { key: "contacted", count: contactedProspects, rate: percentOf(contactedProspects, totalProspects) },
+      { key: "proposal_sent", count: proposalPipeline, rate: percentOf(proposalPipeline, totalProspects) },
+      { key: "clients", count: convertedClients, rate: percentOf(convertedClients, totalProspects) },
+    ],
+    pipeline: STATUS_SORT_ORDER
+      .map(status => ({ status, count: statusCounts[status] ?? 0, rate: percentOf(statusCounts[status] ?? 0, totalProspects) }))
+      .filter(item => item.count > 0),
+    followUps: buildDashboardFollowUps(state),
+  };
+}
+
+function buildActivitySeries(activityEvents: DemoActivityEvent[]) {
+  const parsedDates = activityEvents
+    .map(event => new Date(event.created_at))
+    .filter(date => Number.isFinite(date.getTime()));
+  const latest = parsedDates.length
+    ? new Date(Math.max(...parsedDates.map(date => date.getTime())))
+    : new Date();
+  const end = startOfWeek(latest);
+  const weeks = Array.from({ length: 8 }, (_, index) => addDays(end, (index - 7) * 7));
+
+  return weeks.map(weekStart => {
+    const weekEnd = addDays(weekStart, 7).getTime();
+    const calls = activityEvents.filter(event => {
+      const timestamp = new Date(event.created_at).getTime();
+      return event.type === "call" && timestamp >= weekStart.getTime() && timestamp < weekEnd;
+    }).length;
+    const emails = activityEvents.filter(event => {
+      const timestamp = new Date(event.created_at).getTime();
+      return event.type === "email" && timestamp >= weekStart.getTime() && timestamp < weekEnd;
+    }).length;
+    return {
+      weekStart: weekStart.toISOString(),
+      calls,
+      emails,
+      total: calls + emails,
+    };
+  });
+}
+
+function buildDashboardFollowUps(state: DemoState) {
+  const now = Date.now();
+  const callbackItems = state.prospects
+    .filter(prospect => prospect.callback_at && new Date(prospect.callback_at).getTime() >= now)
+    .map(prospect => ({
+      id: `callback-${prospect.id}`,
+      type: "callback",
+      date: prospect.callback_at!,
+      title: "Callback",
+      prospectId: prospect.id,
+      prospectName: prospect.name,
+      status: prospect.status,
+    }));
+  const appointmentItems = state.appointments
+    .filter(appointment => appointment.status === "scheduled" && new Date(appointment.date).getTime() >= now)
+    .map(appointment => {
+      const prospect = state.prospects.find(item => item.id === appointment.prospect_id);
+      return {
+        id: `appointment-${appointment.id}`,
+        type: "appointment",
+        date: appointment.date,
+        title: appointment.title,
+        prospectId: appointment.prospect_id,
+        prospectName: prospect?.name ?? "Unknown",
+        status: prospect?.status ?? "",
+      };
+    });
+
+  return [...callbackItems, ...appointmentItems]
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    .slice(0, 6);
+}
+
+function startOfWeek(date: Date) {
+  const next = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+  const day = next.getUTCDay() || 7;
+  next.setUTCDate(next.getUTCDate() - day + 1);
+  next.setUTCHours(0, 0, 0, 0);
+  return next;
+}
+
+function addDays(date: Date, days: number) {
+  const next = new Date(date);
+  next.setUTCDate(next.getUTCDate() + days);
+  return next;
+}
+
+function percentOf(value: number, total: number) {
+  return total ? Math.round((value / total) * 100) : 0;
 }
 
 function listProspectDocuments(state: DemoState, prospectId: number) {
@@ -1009,8 +1133,10 @@ function handleEmailSend(state: DemoState, commit: CommitFn, body: unknown) {
   const subject = String(body.get("subject") ?? "").trim();
   if (!to || !subject) return jsonResponse({ error: "Recipient and subject are required." }, 400);
   const now = new Date().toISOString();
+  const activityEvent = createActivityEvent(state, prospectId, "email", now);
   commit({
     ...state,
+    activityEvents: activityEvent ? [activityEvent, ...state.activityEvents] : state.activityEvents,
     prospects: state.prospects.map(prospect =>
       prospect.id === prospectId && prospect.status === "new"
         ? { ...prospect, status: "contacted", updated_at: now }
@@ -1018,6 +1144,32 @@ function handleEmailSend(state: DemoState, commit: CommitFn, body: unknown) {
     ),
   });
   return jsonResponse({ ok: true });
+}
+
+function handleActivityCreate(state: DemoState, commit: CommitFn, body: unknown) {
+  if (!commit) return jsonResponse({ error: "Demo state is not ready." }, 503);
+  const payload = asRecord(body);
+  const prospectId = Number(payload.prospectId);
+  const type = payload.type === "email" ? "email" : "call";
+  const activityEvent = createActivityEvent(state, prospectId, type);
+  if (!activityEvent) return jsonResponse({ error: "Prospect not found." }, 404);
+  commit({ ...state, activityEvents: [activityEvent, ...state.activityEvents] });
+  return jsonResponse(activityEvent, 201);
+}
+
+function createActivityEvent(
+  state: DemoState,
+  prospectId: number,
+  type: "call" | "email",
+  createdAt = new Date().toISOString()
+): DemoActivityEvent | null {
+  if (!Number.isFinite(prospectId) || !state.prospects.some(prospect => prospect.id === prospectId)) return null;
+  return {
+    id: nextId(state.activityEvents),
+    prospect_id: prospectId,
+    type,
+    created_at: createdAt,
+  };
 }
 
 function normalizeAppointmentPayload(body: unknown):

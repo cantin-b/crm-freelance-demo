@@ -278,12 +278,11 @@ export function NewClientForm() {
 
               <div className="grid gap-2">
                 <Label htmlFor="client-country">{t.field_country}</Label>
-                <Select value={form.country || "__none"} onValueChange={value => update("country", value === "__none" ? "" : value)}>
+                <Select value={form.country || undefined} onValueChange={value => update("country", value)}>
                   <SelectTrigger id="client-country">
                     <SelectValue placeholder={t.select_country_placeholder} />
                   </SelectTrigger>
                   <SelectContent className={COUNTRY_SELECT_CONTENT_CLASS}>
-                    <SelectItem value="__none">—</SelectItem>
                     <CountrySelectItems />
                   </SelectContent>
                 </Select>

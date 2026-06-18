@@ -12,6 +12,7 @@ import { ProspectStatusBadge } from "./ProspectStatusBadge";
 import { useT } from "@/components/providers/UiLanguageProvider";
 import { getAllowedStatusValues, type Status } from "@/lib/constants";
 import { cn } from "@/lib/utils";
+import { recordDemoCall } from "@/lib/demoActivityClient";
 import type { Prospect } from "@/types";
 
 interface Props {
@@ -99,6 +100,7 @@ export function ProspectRow({
         {prospect.phone ? (
           <a
             href={`tel:${prospect.phone}`}
+            onClick={() => recordDemoCall(prospect.id)}
             className="flex items-center gap-1.5 whitespace-nowrap text-sm font-medium text-brand-navy hover:text-brand-red hover:underline"
           >
             <Phone className="w-3.5 h-3.5 shrink-0" />
