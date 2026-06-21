@@ -33,6 +33,9 @@ const en = {
   nav_mobile_appointments: "Appts",
   nav_mobile_calendar: "Cal",
   nav_mobile_dashboard: "Dash",
+  nav_mobile_more: "More",
+  mobile_menu_title: "More navigation",
+  mobile_menu_description: "Secondary CRM navigation links.",
 
   // ── Dashboard ────────────────────────────────────────────────────────────────
   dashboard_description: "Track demo outreach activity, pipeline movement and upcoming follow-ups.",
@@ -637,6 +640,9 @@ const fr: T = {
   nav_mobile_appointments: "RDV",
   nav_mobile_calendar: "Cal",
   nav_mobile_dashboard: "Bord",
+  nav_mobile_more: "Plus",
+  mobile_menu_title: "Navigation",
+  mobile_menu_description: "Liens de navigation secondaires du CRM.",
 
   // ── Dashboard ────────────────────────────────────────────────────────────────
   dashboard_description: "Suivez l'activité de prospection démo, le pipeline et les prochains suivis.",
